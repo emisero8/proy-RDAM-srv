@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: rdam-backend
+
+  # ─── DataSource (PostgreSQL) ─────────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rdam
+    username: ${DB_USERNAME:rdam_user}
+    password: ${DB_PASSWORD:rdam_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  # ─── JPA ─────────────────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+  # ─── Flyway (migraciones) ─────────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # ─── Email ────────────────────────────────────────────────────────────────────
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:noreply@rdam.gob.ar}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# ─── JWT ───────────────────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET:${random.uuid}${random.uuid}}
+  access-token-expiration: 3600        # segundos (1 hora)
+  refresh-token-expiration: 604800     # segundos (7 días)
+
+# ─── RDAM Negocio ──────────────────────────────────────────────────────────────
+rdam:
+  auth:
+    codigo-ttl-minutos: ${AUTH_CODIGO_TTL:15}
+    codigo-max-intentos: ${AUTH_CODIGO_MAX_INTENTOS:5}
+    ciudadano-token-expiration: ${AUTH_CIUDADANO_TOKEN_EXP:86400}
+  certificado:
+    validez-dias: 90
+    storage-path: ${CERT_STORAGE_PATH:./certs}
+  arancel:
+    libre-deuda: 1500.00
+  pluspagos:
+    api-url: ${PLUSPAGOS_URL:http://localhost:3000}
+    merchant-guid: ${PLUSPAGOS_MERCHANT_GUID:test-merchant-001}
+    secret-key: ${PLUSPAGOS_SECRET_KEY:clave-secreta-campus-2026}
+    frontend-url: ${FRONTEND_URL:http://localhost:5173}
+    webhook-secret: ${PLUSPAGOS_WEBHOOK_SECRET:}
+
+# ─── Actuator ─────────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  level:
+    ar.gob.rdam: INFO
+    org.springframework.security: WARN
+
+server:
+  port: 8080
+  servlet:
+    context-path: /v1

@@ -1,0 +1,74 @@
+spring:
+  # ─── DataSource (PostgreSQL local — igual BD que producción) ──────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rdam
+    username: ${DB_USERNAME:rdam_user}
+    password: ${DB_PASSWORD:rdam_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+  # ─── JPA ─────────────────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+  # ─── Flyway ──────────────────────────────────────────────────────────────────
+  flyway:
+    enabled: true               # Aplica migraciones al arrancar
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # ─── Mail (desactivar verificación health en dev) ────────────────────────────
+  mail:
+    host: localhost
+    port: 25
+    username: dev
+    password: dev
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
+
+management:
+  health:
+    mail:
+      enabled: false
+
+# ─── JWT ──────────────────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET:${random.uuid}${random.uuid}}
+  access-token-expiration: 3600
+  refresh-token-expiration: 604800
+
+# ─── RDAM Negocio ─────────────────────────────────────────────────────────────
+rdam:
+  auth:
+    codigo-ttl-minutos: 15
+    codigo-max-intentos: 5
+    ciudadano-token-expiration: 86400
+  certificado:
+    validez-dias: 90
+    storage-path: ${CERT_STORAGE_PATH:./dev-certs}
+  arancel:
+    libre-deuda: 1500.00
+  pluspagos:
+    api-url: http://localhost:3000
+    merchant-guid: test-merchant-001
+    secret-key: clave-secreta-campus-2026
+    frontend-url: http://localhost:5173
+    webhook-secret: dev-webhook-secret
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  level:
+    ar.gob.rdam: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.flywaydb: INFO

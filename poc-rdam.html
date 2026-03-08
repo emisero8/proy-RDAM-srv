@@ -1,0 +1,2658 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDAM | Registro de Deudores Alimentarios Morosos (v4)</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-light: #3b82f6;
+            --primary-dark: #1e3a8a;
+            --primary-bg: #eff6ff;
+            --secondary: #0891b2;
+            --accent: #10b981;
+            --accent-light: #d1fae5;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, .1), 0 1px 2px rgba(0, 0, 0, .06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, .1), 0 2px 4px -1px rgba(0, 0, 0, .06);
+            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, .1), 0 10px 10px -5px rgba(0, 0, 0, .04);
+            --transition: all .2s ease
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            min-height: 100vh
+        }
+
+        .app {
+            display: flex;
+            min-height: 100vh
+        }
+
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: var(--transition)
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, .1)
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -.5px
+        }
+
+        .sidebar-header p {
+            font-size: 10px;
+            opacity: .5;
+            margin-top: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: .5px
+        }
+
+        .role-switcher {
+            margin: 16px 16px 8px;
+            background: rgba(255, 255, 255, .1);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            display: flex;
+            gap: 4px
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 8px 6px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'Outfit', sans-serif;
+            color: rgba(255, 255, 255, .7);
+            background: transparent
+        }
+
+        .role-btn.active {
+            background: var(--primary-light);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, .4)
+        }
+
+        .nav-section {
+            padding: 12px 16px 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: .4;
+            font-weight: 600
+        }
+
+        .nav-items {
+            padding: 0 8px;
+            flex: 1;
+            overflow-y: auto
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+            color: rgba(255, 255, 255, .7);
+            margin-bottom: 2px
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, .08);
+            color: #fff
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, .15);
+            color: #fff;
+            font-weight: 500
+        }
+
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid rgba(255, 255, 255, .1)
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 500
+        }
+
+        .user-role {
+            font-size: 11px;
+            opacity: .5
+        }
+
+        .main {
+            margin-left: 280px;
+            flex: 1;
+            display: flex;
+            flex-direction: column
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto
+        }
+
+        .header {
+            background: #fff;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--gray-500)
+        }
+
+        .breadcrumb span.current {
+            color: var(--gray-800);
+            font-weight: 500
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md)
+        }
+
+        .btn-success {
+            background: var(--accent);
+            color: #fff
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px)
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px)
+        }
+
+        .btn-outline {
+            background: #fff;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300)
+        }
+
+        .btn-outline:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400)
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px
+        }
+
+        .btn-lg {
+            padding: 12px 24px;
+            font-size: 15px
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #fff
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+            transform: translateY(-1px)
+        }
+
+        .content {
+            padding: 32px;
+            flex: 1
+        }
+
+        .view {
+            display: none;
+            padding: 32px;
+            box-sizing: border-box
+        }
+
+        .view.active {
+            display: block;
+            animation: fadeIn .3s ease
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin-bottom: 24px
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-100);
+            transition: var(--transition);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            column-gap: 12px
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md)
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            font-weight: 500;
+            grid-row: 1;
+            grid-column: 2
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 12px;
+            color: var(--gray-900);
+            grid-row: 2;
+            grid-column: 1 / -1
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0;
+            font-size: 18px;
+            grid-row: 1;
+            grid-column: 1
+        }
+
+        .card {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-100);
+            overflow: hidden
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .card-header h3 {
+            font-size: 16px;
+            font-weight: 600
+        }
+
+        .card-body {
+            padding: 20px
+        }
+
+        .table-container {
+            overflow-x: auto
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            border-bottom: 2px solid var(--gray-100);
+            background: var(--gray-50)
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 13px
+        }
+
+        tr:hover {
+            background: var(--gray-50)
+        }
+
+        tr {
+            cursor: pointer;
+            transition: var(--transition)
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            letter-spacing: .3px
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e
+        }
+
+        .badge-assigned {
+            background: #dbeafe;
+            color: #1e40af
+        }
+
+        .badge-uploaded {
+            background: #e0e7ff;
+            color: #3730a3
+        }
+
+        .badge-payment {
+            background: #fce7f3;
+            color: #9d174d
+        }
+
+        .badge-paid {
+            background: #cffafe;
+            color: #155e75
+        }
+
+        .badge-issued {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7
+        }
+
+        .badge-rejected {
+            background: #fee2e2;
+            color: #991b1b
+        }
+
+        .badge-expired {
+            background: #e5e7eb;
+            color: #374151;
+            border: 1px solid #111827
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+
+        .filter-input {
+            padding: 8px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: 'Outfit', sans-serif;
+            transition: var(--transition);
+            background: #fff
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .15)
+        }
+
+        .form-group {
+            margin-bottom: 20px
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--gray-700)
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            transition: var(--transition)
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .15)
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px)
+        }
+
+        .modal-overlay.active {
+            display: flex
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 520px;
+            box-shadow: var(--shadow-lg);
+            animation: modalIn .3s ease
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(.95)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: var(--gray-100);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: var(--transition)
+        }
+
+        .modal-close:hover {
+            background: var(--gray-200)
+        }
+
+        .modal-body {
+            padding: 24px
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--gray-100);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            animation: toastIn .3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 280px
+        }
+
+        .toast-success {
+            background: #059669
+        }
+
+        .toast-error {
+            background: #dc2626
+        }
+
+        .toast-info {
+            background: var(--primary)
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0)
+            }
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px
+        }
+
+        .detail-section {
+            margin-bottom: 24px
+        }
+
+        .detail-section h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--gray-100)
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--gray-50)
+        }
+
+        .detail-label {
+            font-size: 13px;
+            color: var(--gray-500)
+        }
+
+        .detail-value {
+            font-size: 13px;
+            font-weight: 500
+        }
+
+        .timeline {
+            margin-top: 16px
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            padding-bottom: 20px;
+            position: relative
+        }
+
+        .timeline-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 32px;
+            bottom: 0;
+            width: 2px;
+            background: var(--gray-200)
+        }
+
+        .timeline-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            border: 2px solid var(--gray-200);
+            background: #fff
+        }
+
+        .timeline-dot.done {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            color: var(--accent)
+        }
+
+        .timeline-dot.current {
+            border-color: var(--primary);
+            background: var(--primary-bg);
+            color: var(--primary)
+        }
+
+        .timeline-content h5 {
+            font-size: 13px;
+            font-weight: 600
+        }
+
+        .timeline-content p {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 2px
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--gray-200)
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-400)
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px
+        }
+
+        .empty-state p {
+            font-size: 14px
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed var(--gray-300);
+            border-radius: var(--radius);
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--gray-50)
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-light);
+            background: var(--primary-bg)
+        }
+
+        .upload-area .upload-icon {
+            font-size: 40px;
+            margin-bottom: 12px
+        }
+
+        .upload-area p {
+            font-size: 14px;
+            color: var(--gray-500)
+        }
+
+        .upload-area .upload-hint {
+            font-size: 12px;
+            color: var(--gray-400);
+            margin-top: 4px
+        }
+
+        /* Checkout */
+        .checkout-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 28px;
+            min-height: 600px
+        }
+
+        .checkout-summary {
+            background: linear-gradient(160deg, #1e3a8a 0%, #0f2557 60%, #1a1a3e 100%);
+            color: #fff;
+            border-radius: var(--radius);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between
+        }
+
+        .checkout-summary .pp-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -.3px
+        }
+
+        .checkout-summary .pp-logo span {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 14px
+        }
+
+        .checkout-summary .order-detail {
+            flex: 1
+        }
+
+        .checkout-summary .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .12);
+            font-size: 14px
+        }
+
+        .checkout-summary .order-item:last-child {
+            border-bottom: none
+        }
+
+        .checkout-summary .order-total {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 2px solid rgba(255, 255, 255, .2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .checkout-summary .order-total .total-label {
+            font-size: 14px;
+            opacity: .7
+        }
+
+        .checkout-summary .order-total .total-amount {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -1px
+        }
+
+        .checkout-summary .security-note {
+            margin-top: 24px;
+            background: rgba(255, 255, 255, .08);
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, .7);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.5
+        }
+
+        .checkout-form {
+            display: flex;
+            flex-direction: column
+        }
+
+        .checkout-steps {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 28px
+        }
+
+        .checkout-step {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            color: var(--gray-400);
+            border-bottom: 3px solid var(--gray-200);
+            transition: var(--transition)
+        }
+
+        .checkout-step.active {
+            color: var(--primary);
+            border-color: var(--primary)
+        }
+
+        .checkout-step.done {
+            color: var(--accent);
+            border-color: var(--accent)
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px
+        }
+
+        .pm-card {
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            background: #fff
+        }
+
+        .pm-card:hover {
+            border-color: var(--primary-light);
+            background: var(--primary-bg);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md)
+        }
+
+        .pm-card.selected {
+            border-color: var(--primary);
+            background: var(--primary-bg);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .15)
+        }
+
+        .pm-card .pm-icon {
+            font-size: 28px;
+            margin-bottom: 6px
+        }
+
+        .pm-card .pm-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-800)
+        }
+
+        .pm-card .pm-desc {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 2px
+        }
+
+        .payment-fields {
+            display: none;
+            animation: fadeIn .3s ease
+        }
+
+        .payment-fields.active {
+            display: block
+        }
+
+        .qr-container {
+            text-align: center;
+            padding: 24px;
+            background: var(--gray-50);
+            border-radius: var(--radius-sm);
+            border: 2px dashed var(--gray-200)
+        }
+
+        .qr-box {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 16px;
+            background: #fff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+            font-size: 100px;
+            position: relative;
+            overflow: hidden
+        }
+
+        .qr-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-conic-gradient(#1a1a1a 0% 25%, #fff 0% 50%) 50%/14px 14px;
+            opacity: .15;
+            border-radius: 12px
+        }
+
+        .processing-overlay {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            text-align: center;
+            animation: fadeIn .4s ease
+        }
+
+        .processing-overlay.active {
+            display: flex
+        }
+
+        .spinner {
+            width: 64px;
+            height: 64px;
+            border: 4px solid var(--gray-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .processing-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 8px
+        }
+
+        .processing-sub {
+            font-size: 13px;
+            color: var(--gray-400);
+            transition: all .3s ease
+        }
+
+        .processing-dots::after {
+            content: '';
+            animation: dots 1.5s infinite
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: ''
+            }
+
+            40% {
+                content: '.'
+            }
+
+            60% {
+                content: '..'
+            }
+
+            80%,
+            100% {
+                content: '...'
+            }
+        }
+
+        .success-view {
+            display: none;
+            animation: fadeIn .5s ease
+        }
+
+        .success-view.active {
+            display: block
+        }
+
+        .success-card {
+            max-width: 520px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 40px
+        }
+
+        .success-check {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            color: #fff;
+            animation: popIn .5s cubic-bezier(.17, .67, .35, 1.5)
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0)
+            }
+
+            80% {
+                transform: scale(1.15)
+            }
+
+            100% {
+                transform: scale(1)
+            }
+        }
+
+        .success-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 8px
+        }
+
+        .success-subtitle {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin-bottom: 28px
+        }
+
+        .receipt-card {
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: left;
+            border: 1px solid var(--gray-100);
+            margin-bottom: 24px
+        }
+
+        .receipt-card .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--gray-100)
+        }
+
+        .receipt-card .receipt-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 16px;
+            padding-top: 12px;
+            margin-top: 4px;
+            border-top: 2px solid var(--gray-200)
+        }
+
+        .receipt-card .receipt-row .receipt-label {
+            color: var(--gray-500)
+        }
+
+        .receipt-card .receipt-row .receipt-value {
+            color: var(--gray-800);
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px
+        }
+
+        .receipt-card .receipt-row:last-child .receipt-value {
+            color: var(--accent);
+            font-size: 16px
+        }
+
+        .transfer-info {
+            background: var(--primary-bg);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            border: 1px solid #bfdbfe
+        }
+
+        .transfer-info .transfer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 13px
+        }
+
+        .transfer-info .transfer-row .copy-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 0
+        }
+
+        @media(max-width:1024px) {
+            .sidebar {
+                width: 220px
+            }
+
+            .main {
+                margin-left: 220px
+            }
+
+            .content {
+                padding: 20px
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .form-row,
+            .detail-grid {
+                grid-template-columns: 1fr
+            }
+        }
+
+        @media(max-width:960px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .detail-grid,
+            .checkout-layout {
+                grid-template-columns: 1fr
+            }
+        }
+
+        @media(max-width:768px) {
+            .sidebar {
+                transform: translateX(-100%)
+            }
+
+            .main {
+                margin-left: 0
+            }
+
+            .filters {
+                flex-direction: column
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>⚖️ RDAM</h1>
+                <p>Registro de Deudores Alimentarios Morosos</p>
+            </div>
+            <div class="role-switcher">
+                <button class="role-btn active" onclick="switchRole('ciudadano')">Ciudadano</button>
+                <button class="role-btn" onclick="switchRole('interno')">Interno</button>
+                <button class="role-btn" onclick="switchRole('admin')">Admin</button>
+            </div>
+            <div class="nav-section" id="nav-section-label">MENÚ PRINCIPAL</div>
+            <nav class="nav-items" id="nav-items"></nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar" id="user-avatar">MG</div>
+                    <div>
+                        <div class="user-name" id="user-name">María García</div>
+                        <div class="user-role" id="user-role-label">Ciudadano</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <div class="main">
+            <header class="header">
+                <div class="breadcrumb">
+                    <span>RDAM</span><span>›</span><span class="current" id="breadcrumb-current">Dashboard</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-outline btn-sm" onclick="showToast('Notificaciones actualizadas','info')">🔔
+                        3</button>
+                </div>
+            </header>
+            <div class="content">
+
+                <!-- ===== CIUDADANO: DASHBOARD (unified with Solicitudes) ===== -->
+                <div class="view" id="view-c-dashboard">
+                    <h2 class="page-title">Bienvenida, María</h2>
+                    <p class="page-subtitle">Resumen y seguimiento de tus solicitudes de certificado</p>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:#dbeafe;color:var(--primary)">📄</div>
+                            <div class="stat-label">Total Solicitudes</div>
+                            <div class="stat-value">4</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:#fef3c7;color:#d97706">⏳</div>
+                            <div class="stat-label">En Proceso</div>
+                            <div class="stat-value">2</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:#d1fae5;color:#059669">✅</div>
+                            <div class="stat-label">Emitidas</div>
+                            <div class="stat-value">1</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:#fce7f3;color:#9d174d">💳</div>
+                            <div class="stat-label">Pendientes de Pago</div>
+                            <div class="stat-value">1</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:#e5e7eb;color:#374151">⏱️</div>
+                            <div class="stat-label">Expiradas</div>
+                            <div class="stat-value">1</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Mis Solicitudes</h3>
+                            <button class="btn btn-primary btn-sm" onclick="navigate('c-nueva')">+ Nueva
+                                Solicitud</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="filters" style="margin-bottom:16px">
+                                <input class="filter-input" placeholder="🔍 Buscar por número..."
+                                    style="flex:1;max-width:300px" id="filter-search">
+                                <select class="filter-input" id="filter-status">
+                                    <option value="">Todos los estados</option>
+                                    <option>PENDIENTE ASIGNAR</option>
+                                    <option>ASIGNADA</option>
+                                    <option>CERT. CARGADO</option>
+                                    <option>ESPERANDO PAGO</option>
+                                    <option>PAGADA</option>
+                                    <option>EMITIDA</option>
+                                    <option>EXPIRADA</option>
+                                </select>
+                                <select class="filter-input">
+                                    <option>Más recientes</option>
+                                    <option>Más antiguos</option>
+                                </select>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>N° Solicitud</th>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            <th>Monto</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-ciudadano">
+                                        <tr onclick="navigate('c-detalle')">
+                                            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">
+                                                SOL-2026-001</td>
+                                            <td>10/02/2026</td>
+                                            <td><span class="badge badge-issued">EMITIDA</span></td>
+                                            <td>$1.500</td>
+                                            <td><button class="btn btn-outline btn-sm"
+                                                    onclick="event.stopPropagation();showToast('Descargando certificado...','success')">Descargar</button>
+                                            </td>
+                                        </tr>
+                                        <tr onclick="navigate('c-detalle')">
+                                            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">
+                                                SOL-2025-089</td>
+                                            <td>10/11/2025</td>
+                                            <td><span class="badge badge-expired">EXPIRADA</span></td>
+                                            <td>$1.500</td>
+                                            <td>
+                                                <button class="btn btn-outline btn-sm"
+                                                    onclick="event.stopPropagation();showToast('Descargando certificado expirado...','info')">Descargar</button>
+                                                <button class="btn btn-primary btn-sm" style="margin-left:6px"
+                                                    onclick="event.stopPropagation();navigate('c-nueva')">Renovar</button>
+                                            </td>
+                                        </tr>
+                                        <tr onclick="navigate('c-detalle')">
+                                            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">
+                                                SOL-2026-002</td>
+                                            <td>12/02/2026</td>
+                                            <td><span class="badge badge-payment"
+                                                    id="badge-sol002-solicitudes">ESPERANDO PAGO</span></td>
+                                            <td>$2.000</td>
+                                            <td><button class="btn btn-success btn-sm" id="btn-pagar-sol002-solicitudes"
+                                                    onclick="event.stopPropagation();navigate('c-checkout')">Pagar</button>
+                                            </td>
+                                        </tr>
+                                        <tr onclick="navigate('c-detalle')">
+                                            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">
+                                                SOL-2026-003</td>
+                                            <td>14/02/2026</td>
+                                            <td><span class="badge badge-pending">PENDIENTE ASIGNAR</span></td>
+                                            <td>$1.500</td>
+                                            <td><span style="color:var(--gray-400);font-size:12px">Esperando
+                                                    asignación</span></td>
+                                        </tr>
+                                        <tr onclick="navigate('c-detalle')">
+                                            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">
+                                                SOL-2026-004</td>
+                                            <td>16/02/2026</td>
+                                            <td><span class="badge badge-assigned">ASIGNADA</span></td>
+                                            <td>$1.500</td>
+                                            <td><span style="color:var(--gray-400);font-size:12px">En proceso</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== CIUDADANO: NUEVA SOLICITUD ===== -->
+                <div class="view" id="view-c-nueva">
+                    <h2 class="page-title">Nueva Solicitud</h2>
+                    <p class="page-subtitle">Solicitar certificado de deudor alimentario moroso</p>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Datos del Solicitante</h3>
+                        </div>
+                        <div class="card-body">
+                            <div
+                                style="background:#eff6ff;padding:14px;border-radius:8px;margin-bottom:20px;font-size:13px;color:#1e40af;display:flex;gap:8px;align-items:center">
+                                <span>ℹ️</span> Se emitirá un certificado que acredita si el solicitante figura o no en
+                                el Registro de Deudores Alimentarios Morosos.
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label>Nombre Completo *</label><input class="form-control"
+                                        value="María García López"></div>
+                                <div class="form-group"><label>DNI / CUIL *</label><input class="form-control"
+                                        value="27-34567890-1"></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label>Email de contacto *</label><input class="form-control"
+                                        type="email" value="maria.garcia@email.com"></div>
+                                <div class="form-group"><label>Teléfono</label><input class="form-control"
+                                        value="+54 351 555-1234"></div>
+                            </div>
+                            <div class="form-group"><label>Domicilio actual *</label><input class="form-control"
+                                    value="Av. Colón 1234, Córdoba, Argentina"></div>
+                            <div class="form-group"><label>Motivo de la solicitud (opcional)</label><textarea
+                                    class="form-control"
+                                    placeholder="Ej: Trámite judicial, presentación laboral, etc."></textarea></div>
+                            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
+                                <button class="btn btn-outline" onclick="navigate('c-dashboard')">Cancelar</button>
+                                <button class="btn btn-primary btn-lg"
+                                    onclick="showToast('✅ Solicitud SOL-2026-005 creada exitosamente','success');setTimeout(()=>navigate('c-dashboard'),1500)">Enviar
+                                    Solicitud</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== CIUDADANO: DETALLE ===== -->
+                <div class="view" id="view-c-detalle">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+                        <button class="btn btn-outline btn-sm" onclick="navigate('c-dashboard')">← Volver</button>
+                        <div>
+                            <h2 class="page-title" style="margin-bottom:0">SOL-2026-002</h2>
+                            <p class="page-subtitle" style="margin-bottom:0">Certificado de Deudor Alimentario Moroso
+                            </p>
+                        </div>
+                        <span class="badge badge-payment" id="badge-sol002-detalle"
+                            style="font-size:13px;padding:6px 14px;margin-left:auto">ESPERANDO PAGO</span>
+                    </div>
+                    <div class="detail-grid">
+                        <div>
+                            <div class="card" style="margin-bottom:20px">
+                                <div class="card-header">
+                                    <h3>Datos de la Solicitud</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="detail-row"><span class="detail-label">Solicitante</span><span
+                                            class="detail-value">María García López</span></div>
+                                    <div class="detail-row"><span class="detail-label">DNI/CUIL</span><span
+                                            class="detail-value"
+                                            style="font-family:'JetBrains Mono',monospace">27-34567890-1</span></div>
+                                    <div class="detail-row"><span class="detail-label">Certificado</span><span
+                                            class="detail-value">Deudor Alimentario Moroso</span></div>
+                                    <div class="detail-row"><span class="detail-label">Fecha Solicitud</span><span
+                                            class="detail-value">12/02/2026</span></div>
+                                    <div class="detail-row"><span class="detail-label">Arancel</span><span
+                                            class="detail-value"
+                                            style="font-weight:700;color:var(--primary)">$2.000,00</span></div>
+                                    <div class="detail-row"><span class="detail-label">Email</span><span
+                                            class="detail-value">maria.garcia@email.com</span></div>
+                                </div>
+                            </div>
+                            <div class="actions-bar" style="border:none;padding:0" id="actions-sol002-detalle">
+                                <button class="btn btn-success btn-lg" onclick="navigate('c-checkout')"
+                                    style="flex:1">💳 Realizar Pago — $2.000,00</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>Historial de Estados</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="timeline">
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot done">✓</div>
+                                            <div class="timeline-content">
+                                                <h5>Solicitud Creada</h5>
+                                                <p>12/02/2026 09:30 — por María García</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot done">✓</div>
+                                            <div class="timeline-content">
+                                                <h5>Asignada</h5>
+                                                <p>12/02/2026 14:15 — asignado a Carlos Ruiz</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot done">✓</div>
+                                            <div class="timeline-content">
+                                                <h5>Certificado Cargado</h5>
+                                                <p>13/02/2026 10:00 — PDF cargado por Carlos Ruiz</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot current">$</div>
+                                            <div class="timeline-content">
+                                                <h5>Pendiente de Pago</h5>
+                                                <p>Esperando abono del arancel</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot">—</div>
+                                            <div class="timeline-content">
+                                                <h5>Pagada</h5>
+                                                <p style="opacity:.4">Pendiente</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot">—</div>
+                                            <div class="timeline-content">
+                                                <h5>Emitida</h5>
+                                                <p style="opacity:.4">Pendiente</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== CIUDADANO: CHECKOUT PLUSPAGOS ===== -->
+            <div class="view" id="view-c-checkout">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+                    <button class="btn btn-outline btn-sm" onclick="navigate('c-detalle')">← Volver</button>
+                    <h2 class="page-title" style="margin-bottom:0">Checkout — PlusPagos</h2>
+                </div>
+                <div class="checkout-layout">
+                    <div class="checkout-summary">
+                        <div>
+                            <div class="pp-logo"><span>💳</span> PlusPagos</div>
+                            <div class="order-detail">
+                                <div
+                                    style="font-size:12px;opacity:.5;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">
+                                    Detalle del pago</div>
+                                <div class="order-item"><span style="opacity:.7">Solicitud</span><span
+                                        style="font-family:'JetBrains Mono',monospace;font-size:13px">SOL-2026-002</span>
+                                </div>
+                                <div class="order-item"><span style="opacity:.7">Certificado</span><span>Deudor
+                                        Alimentario Moroso</span></div>
+                                <div class="order-item"><span style="opacity:.7">Solicitante</span><span>María García
+                                        López</span></div>
+                                <div class="order-total">
+                                    <span class="total-label">Total a pagar</span>
+                                    <span class="total-amount">$2.000<sup
+                                            style="font-size:16px;opacity:.6">,00</sup></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="security-note">
+                            <span style="font-size:16px">🔒</span>
+                            <span>Conexión segura cifrada SSL/TLS 256-bit. Tus datos son procesados exclusivamente por
+                                PlusPagos.</span>
+                        </div>
+                    </div>
+                    <div class="checkout-form">
+                        <div class="card" style="flex:1;display:flex;flex-direction:column">
+                            <div class="checkout-steps">
+                                <div class="checkout-step active" id="step-1">1. Método</div>
+                                <div class="checkout-step" id="step-2">2. Datos</div>
+                                <div class="checkout-step" id="step-3">3. Confirmar</div>
+                                <div class="checkout-step" id="step-4">4. Comprobante</div>
+                            </div>
+                            <div class="card-body" style="flex:1;display:flex;flex-direction:column">
+                                <div id="checkout-phase-form" style="flex:1">
+                                    <h3 style="margin-bottom:4px">Elegí tu medio de pago</h3>
+                                    <p style="font-size:13px;color:var(--gray-400);margin-bottom:20px">Seleccioná cómo
+                                        querés pagar tu arancel</p>
+                                    <div class="payment-methods">
+                                        <div class="pm-card selected" onclick="selectPaymentMethod('credito',this)">
+                                            <div class="pm-icon">💳</div>
+                                            <div class="pm-name">Tarjeta de Crédito</div>
+                                            <div class="pm-desc">Visa, Mastercard, Amex</div>
+                                        </div>
+                                        <div class="pm-card" onclick="selectPaymentMethod('debito',this)">
+                                            <div class="pm-icon">🏧</div>
+                                            <div class="pm-name">Tarjeta de Débito</div>
+                                            <div class="pm-desc">Todas las tarjetas</div>
+                                        </div>
+                                        <div class="pm-card" onclick="selectPaymentMethod('transferencia',this)">
+                                            <div class="pm-icon">🏦</div>
+                                            <div class="pm-name">Transferencia</div>
+                                            <div class="pm-desc">CBU / CVU / Alias</div>
+                                        </div>
+                                        <div class="pm-card" onclick="selectPaymentMethod('qr',this)">
+                                            <div class="pm-icon">📱</div>
+                                            <div class="pm-name">QR PlusPagos</div>
+                                            <div class="pm-desc">Escaneá y pagá</div>
+                                        </div>
+                                    </div>
+                                    <div class="payment-fields active" id="fields-credito">
+                                        <div class="form-group"><label>Número de tarjeta</label><input
+                                                class="form-control" placeholder="•••• •••• •••• ••••"
+                                                value="4532 •••• •••• 7891"
+                                                style="font-family:'JetBrains Mono',monospace"></div>
+                                        <div class="form-row">
+                                            <div class="form-group"><label>Vencimiento</label><input
+                                                    class="form-control" value="09/28"></div>
+                                            <div class="form-group"><label>CVV</label><input class="form-control"
+                                                    type="password" value="***"></div>
+                                        </div>
+                                        <div class="form-group"><label>Nombre del titular</label><input
+                                                class="form-control" value="MARIA GARCIA"></div>
+                                        <div class="form-group"><label>Cuotas</label><select class="form-control">
+                                                <option>1 cuota de $2.000,00 (sin interés)</option>
+                                                <option>3 cuotas de $733,33</option>
+                                                <option>6 cuotas de $400,00</option>
+                                            </select></div>
+                                    </div>
+                                    <div class="payment-fields" id="fields-debito">
+                                        <div class="form-group"><label>Número de tarjeta de débito</label><input
+                                                class="form-control" placeholder="•••• •••• •••• ••••"
+                                                style="font-family:'JetBrains Mono',monospace"></div>
+                                        <div class="form-row">
+                                            <div class="form-group"><label>Vencimiento</label><input
+                                                    class="form-control" placeholder="MM/AA"></div>
+                                            <div class="form-group"><label>CVV</label><input class="form-control"
+                                                    type="password" placeholder="•••"></div>
+                                        </div>
+                                        <div class="form-group"><label>Nombre del titular</label><input
+                                                class="form-control" placeholder="Como figura en la tarjeta"></div>
+                                    </div>
+                                    <div class="payment-fields" id="fields-transferencia">
+                                        <div style="margin-bottom:16px">
+                                            <h4 style="margin-bottom:12px;font-size:14px">Datos para la transferencia
+                                            </h4>
+                                            <div class="transfer-info">
+                                                <div class="transfer-row"><span
+                                                        style="color:var(--gray-500)">CBU</span><span
+                                                        style="font-family:'JetBrains Mono',monospace;font-size:12px">0070089430004567890123</span>
+                                                </div>
+                                                <div class="transfer-row"><span
+                                                        style="color:var(--gray-500)">Alias</span><span
+                                                        style="font-family:'JetBrains Mono',monospace;font-size:12px">RDAM.PAGOS.PP</span>
+                                                </div>
+                                                <div class="transfer-row"><span
+                                                        style="color:var(--gray-500)">Concepto</span><span
+                                                        style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-002</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="payment-fields" id="fields-qr">
+                                        <div class="qr-container">
+                                            <div class="qr-box">📱</div>
+                                            <h4 style="margin-bottom:4px">Escaneá el código QR</h4>
+                                            <p style="font-size:13px;color:var(--gray-400);margin-bottom:12px">Abrí la
+                                                app de tu billetera virtual</p>
+                                            <div
+                                                style="display:flex;justify-content:center;gap:16px;font-size:11px;color:var(--gray-400)">
+                                                <span>✓ Mercado Pago</span><span>✓ Ualá</span><span>✓ MODO</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px">
+                                        <button class="btn btn-outline"
+                                            onclick="navigate('c-detalle')">Cancelar</button>
+                                        <button class="btn btn-success btn-lg" onclick="startPayment()">🔒 Confirmar
+                                            Pago — $2.000,00</button>
+                                    </div>
+                                </div>
+                                <div class="processing-overlay" id="checkout-phase-processing">
+                                    <div class="spinner"></div>
+                                    <div class="processing-text" id="processing-text">Procesando pago</div>
+                                    <div class="processing-sub processing-dots" id="processing-sub">Conectando con
+                                        PlusPagos</div>
+                                </div>
+                                <div class="success-view" id="checkout-phase-success">
+                                    <div class="success-card">
+                                        <div class="success-check">✓</div>
+                                        <div class="success-title">¡Pago confirmado!</div>
+                                        <div class="success-subtitle">Tu pago fue procesado exitosamente por PlusPagos
+                                        </div>
+                                        <div class="receipt-card">
+                                            <div class="receipt-row"><span class="receipt-label">N°
+                                                    Transacción</span><span class="receipt-value">PP-2026-48572</span>
+                                            </div>
+                                            <div class="receipt-row"><span class="receipt-label">Solicitud</span><span
+                                                    class="receipt-value">SOL-2026-002</span></div>
+                                            <div class="receipt-row"><span class="receipt-label">Fecha y
+                                                    hora</span><span class="receipt-value"
+                                                    id="receipt-datetime">—</span></div>
+                                            <div class="receipt-row"><span class="receipt-label">Método</span><span
+                                                    class="receipt-value" id="receipt-method">Tarjeta de Crédito</span>
+                                            </div>
+                                            <div class="receipt-row"><span class="receipt-label">Total
+                                                    pagado</span><span class="receipt-value">$2.000,00</span></div>
+                                        </div>
+                                        <div style="display:flex;gap:12px;justify-content:center">
+                                            <button class="btn btn-outline"
+                                                onclick="showToast('Comprobante descargado','success')">Descargar
+                                                Comprobante</button>
+                                            <button class="btn btn-primary btn-lg"
+                                                onclick="navigate('c-dashboard')">Volver a Mis Solicitudes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== INTERNO: DASHBOARD ===== -->
+            <div class="view" id="view-i-dashboard">
+                <h2 class="page-title">Panel de Gestión Interno</h2>
+                <p style="font-size:16px;color:var(--primary);margin-bottom:4px;font-weight:600">Bienvenido, Interno
+                    Carlos Ruiz</p>
+                <p class="page-subtitle">Resumen operativo — Registro de Deudores Alimentarios Morosos</p>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#fef3c7;color:#d97706">📥</div>
+                        <div class="stat-label">Pendientes (sin asignar)</div>
+                        <div class="stat-value">5</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#dbeafe;color:var(--primary)">📋</div>
+                        <div class="stat-label">Mis Asignadas</div>
+                        <div class="stat-value">3</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#d1fae5;color:#059669">📄</div>
+                        <div class="stat-label">Certificados Cargados Hoy</div>
+                        <div class="stat-value">4</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#e0e7ff;color:#4f46e5">📜</div>
+                        <div class="stat-label">Cargados Este Mes</div>
+                        <div class="stat-value">18</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Solicitudes pendientes de aceptación</h3>
+                    </div>
+                    <div class="card-body table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>Solicitante</th>
+                                    <th>DNI/CUIL</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-003</td>
+                                    <td>Juan Pérez</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-33445566-7</td>
+                                    <td>14/02</td>
+                                    <td><span class="badge badge-pending">PENDIENTE ASIGNAR</span></td>
+                                    <td><button class="btn btn-warning btn-sm"
+                                            onclick="event.stopPropagation();showToast('✅ Solicitud aceptada','success');this.textContent='Aceptada';this.className='btn btn-outline btn-sm';this.disabled=true">Aceptar</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-011</td>
+                                    <td>Pedro López</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-30456789-5</td>
+                                    <td>16/02</td>
+                                    <td><span class="badge badge-pending">PENDIENTE ASIGNAR</span></td>
+                                    <td><button class="btn btn-warning btn-sm"
+                                            onclick="event.stopPropagation();showToast('✅ Solicitud aceptada','success');this.textContent='Aceptada';this.className='btn btn-outline btn-sm';this.disabled=true">Aceptar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:24px">
+                    <div class="card-header">
+                        <div>
+                            <h3>Mis solicitudes asignadas recientemente</h3>
+                            <p
+                                style="font-size:13px;color:var(--gray-500);font-weight:400;margin-top:4px;margin-bottom:0">
+                                No se lista la totalidad de sus solicitudes asignadas. Ver en <a href="#"
+                                    onclick="navigate('i-bandeja');return false"
+                                    style="color:var(--primary);text-decoration:none;font-weight:500">Mis Asignadas</a>.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card-body table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>Solicitante</th>
+                                    <th>DNI/CUIL</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr onclick="navigate('i-detalle')">
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-001</td>
+                                    <td>María García</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">27-34567890-1</td>
+                                    <td>10/02</td>
+                                    <td><span class="badge badge-issued">EMITIDA</span></td>
+                                    <td><button class="btn btn-outline btn-sm"
+                                            onclick="event.stopPropagation();showToast('Descargando PDF...','success')">Descargar</button>
+                                    </td>
+                                </tr>
+                                <tr onclick="navigate('i-detalle')">
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-002</td>
+                                    <td>Ana López</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">27-11223344-5</td>
+                                    <td>12/02</td>
+                                    <td><span class="badge badge-payment" id="badge-sol002-bandeja">ESPERANDO
+                                            PAGO</span></td>
+                                    <td><span style="color:var(--gray-400);font-size:12px">Esperando pago</span></td>
+                                </tr>
+                                <tr onclick="navigate('i-detalle')">
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-004</td>
+                                    <td>Carlos Gómez</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">23-55667788-9</td>
+                                    <td>16/02</td>
+                                    <td><span class="badge badge-assigned">ASIGNADA</span></td>
+                                    <td><button class="btn btn-primary btn-sm"
+                                            onclick="event.stopPropagation();navigate('i-detalle')">Cargar
+                                            Cert.</button></td>
+                                </tr>
+                                <tr onclick="navigate('i-detalle')">
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-009</td>
+                                    <td>Roberto Díaz</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-39876543-2</td>
+                                    <td>14/02</td>
+                                    <td><span class="badge badge-assigned">ASIGNADA</span></td>
+                                    <td><button class="btn btn-primary btn-sm"
+                                            onclick="event.stopPropagation();navigate('i-detalle')">Cargar
+                                            Cert.</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== INTERNO: MIS ASIGNADAS ===== -->
+            <div class="view" id="view-i-bandeja">
+                <h2 class="page-title">Mis Solicitudes Asignadas</h2>
+                <p class="page-subtitle">Solicitudes que aceptaste para cargar certificado</p>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Mis Solicitudes Asignadas</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="filters" style="margin-bottom:16px">
+                            <input class="filter-input" placeholder="🔍 Buscar..." style="flex:1;max-width:240px"
+                                id="filter-interno">
+                            <select class="filter-input" id="filter-estado-interno">
+                                <option value="">Todos los estados</option>
+                                <option>ASIGNADA</option>
+                                <option>CERT. CARGADO</option>
+                                <option>ESPERANDO PAGO</option>
+                                <option>PAGADA</option>
+                                <option>EMITIDA</option>
+                            </select>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>N° Solicitud</th>
+                                        <th>Solicitante</th>
+                                        <th>DNI/CUIL</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-interno">
+                                    <tr onclick="navigate('i-detalle')">
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-001
+                                        </td>
+                                        <td>María García</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">27-34567890-1
+                                        </td>
+                                        <td>10/02</td>
+                                        <td><span class="badge badge-issued">EMITIDA</span></td>
+                                        <td><button class="btn btn-outline btn-sm"
+                                                onclick="event.stopPropagation();showToast('Descargando PDF...','success')">Descargar</button>
+                                        </td>
+                                    </tr>
+                                    <tr onclick="navigate('i-detalle')">
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-002
+                                        </td>
+                                        <td>Ana López</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">27-11223344-5
+                                        </td>
+                                        <td>12/02</td>
+                                        <td><span class="badge badge-payment" id="badge-sol002-bandeja">ESPERANDO
+                                                PAGO</span></td>
+                                        <td><span style="color:var(--gray-400);font-size:12px">Esperando pago</span>
+                                        </td>
+                                    </tr>
+                                    <tr onclick="navigate('i-detalle')">
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-004
+                                        </td>
+                                        <td>Carlos Gómez</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">23-55667788-9
+                                        </td>
+                                        <td>16/02</td>
+                                        <td><span class="badge badge-assigned">ASIGNADA</span></td>
+                                        <td><button class="btn btn-primary btn-sm"
+                                                onclick="event.stopPropagation();navigate('i-detalle')">Cargar
+                                                Cert.</button></td>
+                                    </tr>
+                                    <tr onclick="navigate('i-detalle')">
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-009
+                                        </td>
+                                        <td>Roberto Díaz</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-39876543-2
+                                        </td>
+                                        <td>14/02</td>
+                                        <td><span class="badge badge-assigned">ASIGNADA</span></td>
+                                        <td><button class="btn btn-primary btn-sm"
+                                                onclick="event.stopPropagation();navigate('i-detalle')">Cargar
+                                                Cert.</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== INTERNO: DETALLE + CARGA ===== -->
+            <div class="view" id="view-i-detalle">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+                    <button class="btn btn-outline btn-sm" onclick="navigate('i-bandeja')">← Volver</button>
+                    <div>
+                        <h2 class="page-title" style="margin-bottom:0">SOL-2026-004</h2>
+                        <p class="page-subtitle" style="margin-bottom:0">Cert. de Deudor Alimentario Moroso</p>
+                    </div>
+                    <span class="badge badge-assigned"
+                        style="font-size:13px;padding:6px 14px;margin-left:auto">ASIGNADA</span>
+                </div>
+                <div class="detail-grid">
+                    <div>
+                        <div class="card" style="margin-bottom:20px">
+                            <div class="card-header">
+                                <h3>Datos del Solicitante</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="detail-row"><span class="detail-label">Nombre</span><span
+                                        class="detail-value">María García López</span></div>
+                                <div class="detail-row"><span class="detail-label">DNI/CUIL</span><span
+                                        class="detail-value"
+                                        style="font-family:'JetBrains Mono',monospace">27-34567890-1</span></div>
+                                <div class="detail-row"><span class="detail-label">Email</span><span
+                                        class="detail-value">maria.garcia@email.com</span></div>
+                                <div class="detail-row"><span class="detail-label">Teléfono</span><span
+                                        class="detail-value">+54 351 555-1234</span></div>
+                                <div class="detail-row"><span class="detail-label">Domicilio</span><span
+                                        class="detail-value">Av. Colón 1234, Córdoba</span></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📤 Cargar Certificado PDF</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label>Resultado del certificado *</label>
+                                    <select class="form-control">
+                                        <option value="">Seleccionar...</option>
+                                        <option>NO ACREDITA DEUDA — No figura en el registro</option>
+                                        <option>ACREDITA DEUDA — Figura como deudor alimentario moroso</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Archivo PDF del certificado *</label>
+                                    <div class="upload-area" onclick="document.getElementById('pdf-upload').click()">
+                                        <div class="upload-icon">📄</div>
+                                        <p>Hacé click o arrastrá el PDF aquí</p>
+                                        <p class="upload-hint">Formato: PDF — Máx 10 MB</p>
+                                    </div>
+                                    <input type="file" id="pdf-upload" accept=".pdf" style="display:none">
+                                </div>
+                                <div class="form-group"><label>Observaciones (opcional)</label><textarea
+                                        class="form-control" rows="3" placeholder="Comentarios internos..."></textarea>
+                                </div>
+                                <div style="display:flex;gap:12px;justify-content:flex-end">
+                                    <button class="btn btn-outline" onclick="navigate('i-bandeja')">Cancelar</button>
+                                    <button class="btn btn-primary btn-lg"
+                                        onclick="openModal('modal-confirmar-carga')">📤 Cargar Certificado</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Historial de Estados</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="timeline">
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot done">✓</div>
+                                        <div class="timeline-content">
+                                            <h5>Solicitud Creada</h5>
+                                            <p>16/02/2026 09:45 — por María García</p>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot current">📋</div>
+                                        <div class="timeline-content">
+                                            <h5>Asignada</h5>
+                                            <p>16/02/2026 11:30 — aceptada por Carlos Ruiz</p>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot">—</div>
+                                        <div class="timeline-content">
+                                            <h5>Certificado Cargado</h5>
+                                            <p style="opacity:.4">Pendiente</p>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot">—</div>
+                                        <div class="timeline-content">
+                                            <h5>Pagada</h5>
+                                            <p style="opacity:.4">Pendiente</p>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot">—</div>
+                                        <div class="timeline-content">
+                                            <h5>Emitida</h5>
+                                            <p style="opacity:.4">Pendiente</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== ADMIN: PANEL DE GESTIÓN ADMINISTRATIVO ===== -->
+            <div class="view" id="view-a-dashboard">
+                <h2 class="page-title">Panel de Gestión Administrativo</h2>
+                <p style="font-size:16px;color:var(--primary);margin-bottom:4px;font-weight:600">Bienvenido,
+                    Administrador Andrés Molina</p>
+                <p class="page-subtitle">Vista completa y gestión operativa del sistema</p>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#fef3c7;color:#d97706">📥</div>
+                        <div class="stat-label">Pendientes (sin asignar)</div>
+                        <div class="stat-value">5</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#dbeafe;color:var(--primary)">📋</div>
+                        <div class="stat-label">Total Solicitudes</div>
+                        <div class="stat-value">12</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#d1fae5;color:#059669">📄</div>
+                        <div class="stat-label">Certificados Cargados Hoy</div>
+                        <div class="stat-value">4</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#e0e7ff;color:#4f46e5">📜</div>
+                        <div class="stat-label">Cargados Este Mes</div>
+                        <div class="stat-value">18</div>
+                    </div>
+                </div>
+
+                <!-- Section: Solicitudes pendientes de aceptación (Same as Interno) -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Solicitudes pendientes de aceptación</h3>
+                    </div>
+                    <div class="card-body table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>Solicitante</th>
+                                    <th>DNI/CUIL</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-003</td>
+                                    <td>Juan Pérez</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-33445566-7</td>
+                                    <td>14/02</td>
+                                    <td><span class="badge badge-pending">PENDIENTE ASIGNAR</span></td>
+                                    <td><button class="btn btn-warning btn-sm"
+                                            onclick="event.stopPropagation();showToast('✅ Solicitud aceptada','success');this.textContent='Aceptada';this.className='btn btn-outline btn-sm';this.disabled=true">Aceptar</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-011</td>
+                                    <td>Pedro López</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-30456789-5</td>
+                                    <td>16/02</td>
+                                    <td><span class="badge badge-pending">PENDIENTE ASIGNAR</span></td>
+                                    <td><button class="btn btn-warning btn-sm"
+                                            onclick="event.stopPropagation();showToast('✅ Solicitud aceptada','success');this.textContent='Aceptada';this.className='btn btn-outline btn-sm';this.disabled=true">Aceptar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section: Solicitudes Generales (Previously "Todas las Solicitudes") -->
+                <div class="card" style="margin-top:24px">
+                    <div class="card-header">
+                        <h3>Solicitudes Generales</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="filters" style="margin-bottom:16px">
+                            <input class="filter-input" placeholder="🔍 Buscar..." style="flex:1;max-width:240px">
+                            <select class="filter-input">
+                                <option value="">Todos los estados</option>
+                                <option>PENDIENTE</option>
+                                <option>ASIGNADA</option>
+                                <option>CERT. CARGADO</option>
+                                <option>PEND. PAGO</option>
+                                <option>PAGADA</option>
+                                <option>EMITIDA</option>
+                            </select>
+                            <select class="filter-input">
+                                <option value="">Todos los internos</option>
+                                <option>Carlos Ruiz</option>
+                                <option>Laura Paz</option>
+                                <option>Sin asignar</option>
+                            </select>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Solicitante</th>
+                                        <th>DNI/CUIL</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Asignado a</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-001
+                                        </td>
+                                        <td>María García</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">27-34567890-1
+                                        </td>
+                                        <td>10/02</td>
+                                        <td><span class="badge badge-issued">EMITIDA</span></td>
+                                        <td>Carlos Ruiz</td>
+                                        <td><button class="btn btn-outline btn-sm"
+                                                onclick="showToast('Descargando...','success')">Descargar</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-002
+                                        </td>
+                                        <td>Ana López</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">27-11223344-5
+                                        </td>
+                                        <td>12/02</td>
+                                        <td><span class="badge badge-payment">PEND. PAGO</span></td>
+                                        <td>Carlos Ruiz</td>
+                                        <td><span style="color:var(--gray-400);font-size:12px">Esperando pago</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-003
+                                        </td>
+                                        <td>Juan Pérez</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-33445566-7
+                                        </td>
+                                        <td>14/02</td>
+                                        <td><span class="badge badge-pending">PENDIENTE</span></td>
+                                        <td style="color:var(--gray-400)">Sin asignar</td>
+                                        <td><span style="color:var(--gray-400);font-size:12px">Esperando</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-004
+                                        </td>
+                                        <td>Carlos Gómez</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">23-55667788-9
+                                        </td>
+                                        <td>16/02</td>
+                                        <td><span class="badge badge-assigned">ASIGNADA</span></td>
+                                        <td>Carlos Ruiz</td>
+                                        <td><span style="color:var(--gray-400);font-size:12px">En proceso</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-009
+                                        </td>
+                                        <td>Roberto Díaz</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-39876543-2
+                                        </td>
+                                        <td>14/02</td>
+                                        <td><span class="badge badge-assigned">ASIGNADA</span></td>
+                                        <td>Carlos Ruiz</td>
+                                        <td><span style="color:var(--gray-400);font-size:12px">En proceso</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-011
+                                        </td>
+                                        <td>Pedro López</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">20-30456789-5
+                                        </td>
+                                        <td>16/02</td>
+                                        <td><span class="badge badge-pending">PENDIENTE</span></td>
+                                        <td style="color:var(--gray-400)">Sin asignar</td>
+                                        <td><span style="color:var(--gray-400);font-size:12px">Esperando</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">SOL-2026-012
+                                        </td>
+                                        <td>Ana Torres</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">23-31234567-9
+                                        </td>
+                                        <td>17/02</td>
+                                        <td><span class="badge badge-uploaded">CERT. CARGADO</span></td>
+                                        <td>Laura Paz</td>
+                                        <td><span style="color:var(--gray-400);font-size:12px">Esperando pago</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== ADMIN: GESTIÓN USUARIOS ===== -->
+            <div class="view" id="view-a-usuarios">
+                <h2 class="page-title">Gestión de Usuarios</h2>
+                <p class="page-subtitle">Administración de usuarios internos del sistema</p>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Usuarios Registrados</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="filters" style="margin-bottom:16px">
+                            <input class="filter-input" placeholder="🔍 Buscar usuario..."
+                                style="flex:1;max-width:300px">
+                            <select class="filter-input">
+                                <option>Todos los roles</option>
+                                <option>Interno</option>
+                                <option>Administrador</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="openModal('modal-usuario')">+ Nuevo
+                                Usuario</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Último acceso</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div style="display:flex;align-items:center;gap:8px">
+                                                <div class="avatar"
+                                                    style="width:28px;height:28px;font-size:11px;background:var(--primary-light)">
+                                                    CR</div>Carlos Ruiz
+                                            </div>
+                                        </td>
+                                        <td>c.ruiz@rdam.gob.ar</td>
+                                        <td><span class="badge badge-assigned">Interno</span></td>
+                                        <td><span style="color:var(--accent)">● Activo</span></td>
+                                        <td>18/02/2026 09:15</td>
+                                        <td><button class="btn btn-outline btn-sm">Editar</button> <button
+                                                class="btn btn-danger btn-sm">Eliminar</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="display:flex;align-items:center;gap:8px">
+                                                <div class="avatar"
+                                                    style="width:28px;height:28px;font-size:11px;background:#0891b2">LP
+                                                </div>Laura Paz
+                                            </div>
+                                        </td>
+                                        <td>l.paz@rdam.gob.ar</td>
+                                        <td><span class="badge badge-assigned">Interno</span></td>
+                                        <td><span style="color:var(--accent)">● Activo</span></td>
+                                        <td>18/02/2026 08:30</td>
+                                        <td><button class="btn btn-outline btn-sm">Editar</button> <button
+                                                class="btn btn-danger btn-sm">Eliminar</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="display:flex;align-items:center;gap:8px">
+                                                <div class="avatar"
+                                                    style="width:28px;height:28px;font-size:11px;background:#7c3aed">AM
+                                                </div>Andrés Molina
+                                            </div>
+                                        </td>
+                                        <td>a.molina@rdam.gob.ar</td>
+                                        <td><span class="badge badge-pending">Administrador</span></td>
+                                        <td><span style="color:var(--accent)">● Activo</span></td>
+                                        <td>17/02/2026 17:45</td>
+                                        <td><button class="btn btn-outline btn-sm">Editar</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /content -->
+        </div><!-- /main -->
+    </div><!-- /app -->
+
+    <!-- MODAL: CONFIRMAR CARGA -->
+    <div class="modal-overlay" id="modal-confirmar-carga">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📤 Confirmar Carga de Certificado</h3><button class="modal-close"
+                    onclick="closeModal('modal-confirmar-carga')">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:16px;color:var(--gray-600)">¿Confirma la carga? El ciudadano será notificado
+                    para proceder con el pago.</p>
+                <div style="background:var(--primary-bg);border-radius:var(--radius-sm);padding:16px">
+                    <div style="font-size:13px;color:var(--gray-600)">Solicitante: <strong>María García López</strong>
+                    </div>
+                    <div style="font-size:13px;color:var(--gray-600)">DNI/CUIL: <strong>27-34567890-1</strong></div>
+                    <div style="font-size:13px;color:var(--gray-600)">Certificado: <strong>Deudor Alimentario
+                            Moroso</strong></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('modal-confirmar-carga')">Cancelar</button>
+                <button class="btn btn-primary"
+                    onclick="closeModal('modal-confirmar-carga');showToast('📤 Certificado cargado — Notificación enviada','success');navigate('i-bandeja')">Confirmar
+                    Carga</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO USUARIO -->
+    <div class="modal-overlay" id="modal-usuario">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>👤 Nuevo Usuario Interno</h3><button class="modal-close"
+                    onclick="closeModal('modal-usuario')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group"><label>Nombre</label><input class="form-control" placeholder="Nombre"></div>
+                    <div class="form-group"><label>Apellido</label><input class="form-control" placeholder="Apellido">
+                    </div>
+                </div>
+                <div class="form-group"><label>Email institucional</label><input class="form-control" type="email"
+                        placeholder="usuario@rdam.gob.ar"></div>
+                <div class="form-group"><label>Rol</label><select class="form-control">
+                        <option>Interno</option>
+                        <option>Administrador</option>
+                    </select></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('modal-usuario')">Cancelar</button>
+                <button class="btn btn-primary"
+                    onclick="closeModal('modal-usuario');showToast('👤 Usuario creado exitosamente','success')">Crear
+                    Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        const navConfig = {
+            ciudadano: [
+                { id: 'c-dashboard', label: 'Panel de Gestión', icon: '📊' },
+                { id: 'c-nueva', label: 'Nueva Solicitud', icon: '➕' }
+            ],
+            interno: [
+                { id: 'i-dashboard', label: 'Panel de Gestión Interno', icon: '📊' },
+                { id: 'i-bandeja', label: 'Mis Asignadas', icon: '📋' }
+            ],
+            admin: [
+                { id: 'a-dashboard', label: 'Panel de Gestión Administrativo', icon: '📊' },
+                { id: 'a-usuarios', label: 'Gestión de Usuarios', icon: '👥' }
+            ]
+        };
+        const userProfiles = {
+            ciudadano: { name: 'María García', initials: 'MG', role: 'Ciudadano' },
+            interno: { name: 'Carlos Ruiz', initials: 'CR', role: 'Interno RDAM' },
+            admin: { name: 'Andrés Molina', initials: 'AM', role: 'Administrador' }
+        };
+        let currentRole = 'ciudadano';
+        let currentView = 'c-dashboard';
+
+        function switchRole(role) {
+            currentRole = role;
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.role-btn[onclick="switchRole('${role}')"]`).classList.add('active');
+            const profile = userProfiles[role];
+            document.getElementById('user-avatar').textContent = profile.initials;
+            document.getElementById('user-name').textContent = profile.name;
+            document.getElementById('user-role-label').textContent = profile.role;
+            renderNav(role);
+            navigate(navConfig[role][0].id);
+        }
+
+        function renderNav(role) {
+            const nav = document.getElementById('nav-items');
+            nav.innerHTML = navConfig[role].map(item =>
+                `<div class="nav-item${item.id === currentView ? ' active' : ''}" onclick="navigate('${item.id}')">
+      <span>${item.icon}</span><span>${item.label}</span>
+    </div>`
+            ).join('');
+        }
+
+        function navigate(viewId) {
+            currentView = viewId;
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const el = document.getElementById('view-' + viewId);
+            if (el) el.classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => {
+                if (n.getAttribute('onclick')?.includes(viewId)) n.classList.add('active');
+            });
+            const labels = {
+                'c-dashboard': 'Panel de Gestión', 'c-nueva': 'Nueva Solicitud',
+                'c-detalle': 'Detalle de Solicitud', 'c-checkout': 'Checkout PlusPagos',
+                'i-dashboard': 'Panel de Gestión', 'i-bandeja': 'Mis Asignadas',
+                'i-detalle': 'Detalle — Cargar Certificado',
+                'a-solicitudes': 'Todas las Solicitudes', 'a-usuarios': 'Gestión de Usuarios'
+            };
+            document.getElementById('breadcrumb-current').textContent = labels[viewId] || viewId;
+            if (viewId === 'c-checkout') resetCheckout();
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        document.querySelectorAll('.modal-overlay').forEach(m => {
+            m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+        });
+
+        function showToast(msg, type = 'info') {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`; t.textContent = msg; c.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(40px)'; setTimeout(() => t.remove(), 300); }, 3500);
+        }
+
+        // Filters
+        document.getElementById('filter-search')?.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('#tabla-ciudadano tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+        });
+        document.getElementById('filter-status')?.addEventListener('change', function () {
+            const v = this.value;
+            document.querySelectorAll('#tabla-ciudadano tr').forEach(r => {
+                if (!v) { r.style.display = ''; return; }
+                const b = r.querySelector('.badge'); r.style.display = b && b.textContent.includes(v) ? '' : 'none';
+            });
+        });
+        document.getElementById('filter-interno')?.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('#tabla-interno tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+        });
+        document.getElementById('filter-estado-interno')?.addEventListener('change', function () {
+            const v = this.value;
+            document.querySelectorAll('#tabla-interno tr').forEach(r => {
+                if (!v) { r.style.display = ''; return; }
+                const b = r.querySelector('.badge'); r.style.display = b && b.textContent.includes(v) ? '' : 'none';
+            });
+        });
+
+        // Checkout
+        let selectedMethod = 'credito';
+        const methodLabels = { credito: 'Tarjeta de Crédito', debito: 'Tarjeta de Débito', transferencia: 'Transferencia Bancaria', qr: 'QR PlusPagos' };
+
+        function selectPaymentMethod(method, el) {
+            selectedMethod = method;
+            document.querySelectorAll('.pm-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            document.querySelectorAll('.payment-fields').forEach(f => f.classList.remove('active'));
+            const fields = document.getElementById('fields-' + method);
+            if (fields) fields.classList.add('active');
+            document.getElementById('step-1').classList.add('done');
+            document.getElementById('step-2').classList.add('active');
+        }
+
+        function resetCheckout() {
+            document.getElementById('checkout-phase-form').style.display = '';
+            document.getElementById('checkout-phase-processing').classList.remove('active');
+            document.getElementById('checkout-phase-success').classList.remove('active');
+            document.querySelectorAll('.checkout-step').forEach((s, i) => { s.classList.remove('done', 'active'); if (i === 0) s.classList.add('active'); });
+        }
+
+        function startPayment() {
+            document.getElementById('checkout-phase-form').style.display = 'none';
+            document.getElementById('checkout-phase-processing').classList.add('active');
+            document.getElementById('step-1').classList.add('done');
+            document.getElementById('step-2').classList.add('done');
+            document.getElementById('step-3').classList.add('active');
+            const t = document.getElementById('processing-text'), s = document.getElementById('processing-sub');
+            t.textContent = 'Procesando pago'; s.textContent = 'Conectando con PlusPagos';
+            setTimeout(() => { t.textContent = 'Verificando datos'; s.textContent = 'Validando información'; }, 1200);
+            setTimeout(() => { t.textContent = 'Confirmando transacción'; s.textContent = 'Registrando pago'; }, 2400);
+            setTimeout(() => completePayment(), 3500);
+        }
+
+        function completePayment() {
+            document.getElementById('checkout-phase-processing').classList.remove('active');
+            document.getElementById('checkout-phase-success').classList.add('active');
+            document.getElementById('step-3').classList.add('done');
+            document.getElementById('step-4').classList.add('active', 'done');
+            const now = new Date(), pad = n => String(n).padStart(2, '0');
+            document.getElementById('receipt-datetime').textContent = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            document.getElementById('receipt-method').textContent = methodLabels[selectedMethod];
+            updateSol002ToPagada();
+        }
+
+        function updateSol002ToPagada() {
+            const dashRow = document.querySelector('#view-c-dashboard tbody tr:nth-child(2)');
+            if (dashRow) {
+                const b = dashRow.querySelector('.badge'); if (b) { b.className = 'badge badge-paid'; b.textContent = 'PAGADA'; }
+                const btn = dashRow.querySelector('.btn-success'); if (btn) { btn.className = 'btn btn-outline btn-sm'; btn.innerHTML = 'Pagado'; btn.onclick = null; btn.style.pointerEvents = 'none'; btn.style.color = 'var(--accent)'; }
+            }
+            const bs = document.getElementById('badge-sol002-solicitudes'); if (bs) { bs.className = 'badge badge-paid'; bs.textContent = 'PAGADA'; }
+            const btns = document.getElementById('btn-pagar-sol002-solicitudes'); if (btns) { btns.className = 'btn btn-outline btn-sm'; btns.innerHTML = 'Pagado'; btns.onclick = null; btns.style.pointerEvents = 'none'; btns.style.color = 'var(--accent)'; }
+            const bd = document.getElementById('badge-sol002-detalle'); if (bd) { bd.className = 'badge badge-paid'; bd.textContent = 'PAGADA'; }
+            const ad = document.getElementById('actions-sol002-detalle'); if (ad) { ad.innerHTML = '<div style="background:#d1fae5;padding:16px;border-radius:8px;text-align:center;flex:1"><span style="color:#059669;font-weight:600">✅ Pago confirmado — Ref. PP-2026-48572</span></div>'; }
+            const bb = document.getElementById('badge-sol002-bandeja');
+            if (bb) { bb.className = 'badge badge-paid'; bb.textContent = 'PAGADA'; const ac = bb.closest('tr')?.querySelector('td:last-child'); if (ac) ac.innerHTML = '<span style="color:var(--accent);font-size:12px;font-weight:600">✅ Pagado</span>'; }
+            showToast('✅ Pago confirmado — $2.000,00 procesado por PlusPagos', 'success');
+        }
+
+        // Init
+        switchRole('ciudadano');
+    </script>
+</body>
+
+</html>

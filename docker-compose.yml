@@ -1,0 +1,118 @@
+# ======================================================
+# RDAM — Docker Compose
+# Levanta todo el sistema con: docker compose up
+# ======================================================
+#
+# Servicios:
+#   db        — PostgreSQL 16 (inicializado con DDL.sql)
+#   pasarela  — PlusPagos mock (Node.js, puerto 3000)
+#   backend   — Spring Boot API (puerto 8080)
+#   frontend  — React + Nginx (puerto 5173)
+#
+# Usuarios de prueba (contraseña: Password1!):
+#   admin@rdam.gob.ar       → Admin
+#   lmartinez@rdam.gob.ar   → Gestor
+#   mgarcia@email.com       → Ciudadano
+# ======================================================
+
+services:
+
+  # ─────────────────────────
+  # Base de datos PostgreSQL
+  # ─────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: rdam-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rdam_user
+      POSTGRES_PASSWORD: rdam_pass
+      POSTGRES_DB: rdam
+    ports:
+      - "5432:5432"
+    volumes:
+      - rdam-pgdata:/var/lib/postgresql/data
+      # El DDL.sql se ejecuta automáticamente la primera vez que se crea el volumen
+      - ./docker/init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rdam_user -d rdam"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─────────────────────────
+  # Pasarela PlusPagos Mock
+  # ─────────────────────────
+  pasarela:
+    build:
+      context: ./pasarela-campus-2026/pluspagos-mock-simple
+      dockerfile: Dockerfile
+    container_name: rdam-pasarela
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      WEBHOOK_URL: http://backend:8080/v1/pagos/webhook
+
+  # ─────────────────────────
+  # Backend Spring Boot
+  # ─────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rdam-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      pasarela:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      # Base de datos (apunta al servicio 'db' dentro de Docker)
+      DB_USERNAME: rdam_user
+      DB_PASSWORD: rdam_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/rdam
+      # Pasarela (apunta al servicio 'pasarela' dentro de Docker)
+      PLUSPAGOS_URL: http://pasarela:3000
+      # Frontend
+      FRONTEND_URL: http://localhost:5173
+      # Spring profile
+      SPRING_PROFILES_ACTIVE: dev
+      CERT_STORAGE_PATH: /app/dev-certs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/v1/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    volumes:
+      - rdam-certs:/app/dev-certs
+
+  # ─────────────────────────
+  # Frontend React (Nginx)
+  # ─────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # La URL del backend es desde el navegador del usuario, no desde Docker
+        VITE_API_URL: http://localhost:8080/v1
+    container_name: rdam-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # Mapeamos al 5173 para mantener consistencia con el arranque local
+      - "5173:80"
+
+volumes:
+  rdam-pgdata:
+    name: rdam-pgdata
+  rdam-certs:
+    name: rdam-certs

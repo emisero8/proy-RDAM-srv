@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDAM — Mapa de Endpoints REST API</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1e3a8a;
+            --primary-bg: #eff6ff;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #7c3aed;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #fff;
+            color: var(--gray-800);
+            line-height: 1.7;
+            padding: 48px;
+            font-size: 14px;
+        }
+
+        .page {
+            max-width: 920px;
+            margin: 0 auto
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 28px;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 16px;
+            color: var(--gray-500)
+        }
+
+        .header .student {
+            font-size: 14px;
+            color: var(--gray-600);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .header .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-top: 12px;
+        }
+
+        .meta-bar {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .meta-item strong {
+            color: var(--gray-700)
+        }
+
+        .section {
+            margin-bottom: 36px
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 16px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--primary);
+            display: inline-block;
+        }
+
+        h2 .entity-tag {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray-500);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 12px;
+            color: var(--gray-600);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        thead th {
+            background: var(--gray-800);
+            color: #fff;
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        thead th:first-child {
+            border-radius: 8px 0 0 0
+        }
+
+        thead th:last-child {
+            border-radius: 0 8px 0 0
+        }
+
+        tbody td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        tbody tr:hover {
+            background: var(--gray-50)
+        }
+
+        tbody tr:last-child td:first-child {
+            border-radius: 0 0 0 8px
+        }
+
+        tbody tr:last-child td:last-child {
+            border-radius: 0 0 8px 0
+        }
+
+        pre {
+            background: var(--gray-900);
+            color: #e2e8f0;
+            padding: 18px 20px;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+
+        pre .comment {
+            color: #64748b
+        }
+
+        pre .key {
+            color: #93c5fd
+        }
+
+        pre .string {
+            color: #86efac
+        }
+
+        pre .number {
+            color: #fde68a
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        pre code {
+            background: none;
+            padding: 0
+        }
+
+        .method {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            min-width: 52px;
+            text-align: center;
+        }
+
+        .method-get {
+            background: #dbeafe;
+            color: #1d4ed8
+        }
+
+        .method-post {
+            background: #d1fae5;
+            color: #047857
+        }
+
+        .method-patch {
+            background: #fef3c7;
+            color: #92400e
+        }
+
+        .method-delete {
+            background: #fee2e2;
+            color: #991b1b
+        }
+
+        .access {
+            font-size: 15px
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        .legend-item .icon {
+            font-size: 16px
+        }
+
+        .highlight-box {
+            background: var(--primary-bg);
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+        }
+
+        .highlight-box p {
+            margin-bottom: 0;
+            font-size: 13px;
+        }
+
+        .endpoint-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .info-card {
+            background: var(--gray-50);
+            border-radius: 10px;
+            padding: 18px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .info-card.green {
+            border-left-color: var(--accent)
+        }
+
+        .info-card.purple {
+            border-left-color: var(--purple)
+        }
+
+        .footer {
+            text-align: center;
+            padding-top: 24px;
+            border-top: 1px solid var(--gray-200);
+            margin-top: 40px;
+            font-size: 11px;
+            color: var(--gray-400);
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact
+            }
+
+            .page {
+                max-width: 100%;
+                margin: 0;
+                padding: 20px
+            }
+
+            .section {
+                page-break-inside: auto;
+                break-inside: auto
+            }
+
+            h2,
+            h3 {
+                page-break-after: avoid
+            }
+
+            table {
+                page-break-inside: avoid;
+                width: 100% !important
+            }
+
+            pre {
+                page-break-inside: avoid;
+                white-space: pre-wrap;
+                word-wrap: break-word
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="header">
+            <h1>Mapa de Endpoints REST API — RDAM</h1>
+            <div class="subtitle">Registro de Deudores Alimentarios Morosos</div>
+            <div class="student">Alumno: Serovich Emilio — DNI 43.770.166 — 3º T.S "A"</div>
+            <div class="badge">i2T Software Factory | Campus de Verano 2026</div>
+            <div class="meta-bar">
+                <div class="meta-item"><strong>Base URL:</strong> https://api.rdam.gob.ar/v1</div>
+                <div class="meta-item"><strong>Auth:</strong> Bearer JWT RS256</div>
+                <div class="meta-item"><strong>Formato:</strong> JSON</div>
+            </div>
+        </div>
+
+        <!-- CONVENCIONES -->
+        <div class="section">
+            <h2>Convenciones</h2>
+            <div class="legend-grid">
+                <div class="legend-item"><span class="icon">🔓</span> Público — sin autenticación</div>
+                <div class="legend-item"><span class="icon">🔑</span> Requiere JWT válido</div>
+                <div class="legend-item"><span class="icon">👤</span> Solo rol CIUDADANO</div>
+                <div class="legend-item"><span class="icon">🏛️</span> Rol GESTOR</div>
+                <div class="legend-item"><span class="icon">⚙️</span> Solo rol ADMIN</div>
+                <div class="legend-item"><span class="icon">📊</span> Rol ADMIN (reportes)</div>
+            </div>
+        </div>
+
+        <!-- 1. AUTH -->
+        <div class="section">
+            <h2>1. Autenticación <code>/auth</code> <span class="entity-tag">→ usuarios, refresh_tokens</span></h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Método</th>
+                        <th>Endpoint</th>
+                        <th>Acceso</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/auth/login</td>
+                        <td class="access">🔓</td>
+                        <td>Iniciar sesión, obtener access + refresh token</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/auth/register</td>
+                        <td class="access">🔓</td>
+                        <td>Registro de nuevo ciudadano</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/auth/forgot-password</td>
+                        <td class="access">🔓</td>
+                        <td>Solicitar link de recuperación de contraseña</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/auth/reset-password</td>
+                        <td class="access">🔓</td>
+                        <td>Restablecer contraseña con token por email</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/auth/refresh</td>
+                        <td class="access">🔓</td>
+                        <td>Renovar access token con refresh token</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/auth/logout</td>
+                        <td class="access">🔑</td>
+                        <td>Revocar refresh token activo</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/auth/logout-all</td>
+                        <td class="access">🔑</td>
+                        <td>Revocar todos los refresh tokens del usuario</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>POST <code>/auth/login</code></h3>
+            <pre><code><span class="comment">// Request</span>
+{
+  <span class="key">"email"</span>: <span class="string">"usuario@email.com"</span>,
+  <span class="key">"password"</span>: <span class="string">"contraseña"</span>
+}
+
+<span class="comment">// Response 200</span>
+{
+  <span class="key">"access_token"</span>: <span class="string">"eyJhbGci..."</span>,
+  <span class="key">"refresh_token"</span>: <span class="string">"eyJhbGci..."</span>,
+  <span class="key">"expires_in"</span>: <span class="number">3600</span>,
+  <span class="key">"usuario"</span>: {
+    <span class="key">"id"</span>: <span class="number">1</span>,
+    <span class="key">"nombre"</span>: <span class="string">"María"</span>,
+    <span class="key">"apellido"</span>: <span class="string">"García"</span>,
+    <span class="key">"email"</span>: <span class="string">"mgarcia@email.com"</span>,
+    <span class="key">"rol"</span>: <span class="string">"CIUDADANO"</span>
+  }
+}
+
+<span class="comment">// Errores</span>
+<span class="comment">// 401 — Credenciales inválidas</span>
+<span class="comment">// 403 — Usuario inactivo</span></code></pre>
+        </div>
+
+        <!-- 2. USUARIOS -->
+        <div class="section">
+            <h2>2. Usuarios <code>/usuarios</code> <span class="entity-tag">→ usuarios</span></h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Método</th>
+                        <th>Endpoint</th>
+                        <th>Acceso</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/usuarios</td>
+                        <td class="access">⚙️</td>
+                        <td>Listar todos los usuarios internos</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/usuarios/:id</td>
+                        <td class="access">🔑</td>
+                        <td>Ver perfil de usuario (propio o admin)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/usuarios</td>
+                        <td class="access">⚙️</td>
+                        <td>Crear nuevo usuario interno</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-patch">PATCH</span></td>
+                        <td class="endpoint-path">/usuarios/:id</td>
+                        <td class="access">⚙️</td>
+                        <td>Editar datos de usuario</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-patch">PATCH</span></td>
+                        <td class="endpoint-path">/usuarios/:id/rol</td>
+                        <td class="access">⚙️</td>
+                        <td>Cambiar rol de usuario interno</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-patch">PATCH</span></td>
+                        <td class="endpoint-path">/usuarios/:id/estado</td>
+                        <td class="access">⚙️</td>
+                        <td>Activar / desactivar usuario</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-delete">DELETE</span></td>
+                        <td class="endpoint-path">/usuarios/:id</td>
+                        <td class="access">⚙️</td>
+                        <td>Eliminar usuario (soft delete)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/usuarios/me</td>
+                        <td class="access">🔑</td>
+                        <td>Ver perfil del usuario autenticado</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-patch">PATCH</span></td>
+                        <td class="endpoint-path">/usuarios/me</td>
+                        <td class="access">🔑</td>
+                        <td>Actualizar datos propios</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-patch">PATCH</span></td>
+                        <td class="endpoint-path">/usuarios/me/password</td>
+                        <td class="access">🔑</td>
+                        <td>Cambiar contraseña propia</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>GET <code>/usuarios</code> — Query params</h3>
+            <pre><code>?rol=GESTOR
+?activo=true
+?search=laura          <span class="comment">(busca en nombre, apellido, email)</span>
+?page=1&amp;limit=20
+?sort=created_at&amp;order=desc</code></pre>
+
+            <h3>POST <code>/usuarios</code></h3>
+            <pre><code><span class="comment">// Request</span>
+{
+  <span class="key">"nombre"</span>: <span class="string">"Laura"</span>,
+  <span class="key">"apellido"</span>: <span class="string">"Martínez"</span>,
+  <span class="key">"email"</span>: <span class="string">"lmartinez@rdam.gob.ar"</span>,
+  <span class="key">"password"</span>: <span class="string">"TempPass123!"</span>,
+  <span class="key">"dni_cuil"</span>: <span class="string">"27-12345678-9"</span>,
+  <span class="key">"telefono"</span>: <span class="string">"011-4444-5555"</span>,
+  <span class="key">"rol"</span>: <span class="string">"GESTOR"</span>
+}
+
+<span class="comment">// Response 201</span>
+{
+  <span class="key">"id"</span>: <span class="number">5</span>,
+  <span class="key">"email"</span>: <span class="string">"lmartinez@rdam.gob.ar"</span>,
+  <span class="key">"rol"</span>: <span class="string">"GESTOR"</span>,
+  <span class="key">"activo"</span>: true,
+  <span class="key">"created_at"</span>: <span class="string">"2026-02-18T15:00:00Z"</span>
+}</code></pre>
+        </div>
+
+        <!-- 3. SOLICITUDES -->
+        <div class="section">
+            <h2>3. Solicitudes <code>/solicitudes</code> <span class="entity-tag">→ solicitudes,
+                    historial_estados</span></h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Método</th>
+                        <th>Endpoint</th>
+                        <th>Acceso</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/solicitudes</td>
+                        <td class="access">🏛️</td>
+                        <td>Listar todas las solicitudes (bandeja interna)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/solicitudes/mis</td>
+                        <td class="access">👤</td>
+                        <td>Listar solicitudes del ciudadano autenticado</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/solicitudes/:id</td>
+                        <td class="access">🔑</td>
+                        <td>Ver detalle de una solicitud</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/solicitudes</td>
+                        <td class="access">👤</td>
+                        <td>Crear nueva solicitud</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-patch">PATCH</span></td>
+                        <td class="endpoint-path">/solicitudes/:id/tomar</td>
+                        <td class="access">🏛️</td>
+                        <td>Tomar solicitud para revisión</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-patch">PATCH</span></td>
+                        <td class="endpoint-path">/solicitudes/:id/aprobar</td>
+                        <td class="access">🏛️</td>
+                        <td>Aprobar solicitud</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-patch">PATCH</span></td>
+                        <td class="endpoint-path">/solicitudes/:id/rechazar</td>
+                        <td class="access">🏛️</td>
+                        <td>Rechazar solicitud con motivo</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/solicitudes/:id/historial</td>
+                        <td class="access">🔑</td>
+                        <td>Ver historial de estados</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>GET <code>/solicitudes</code> — Query params (bandeja interna)</h3>
+            <pre><code>?estado=PENDIENTE_REVISION
+?estado=EN_REVISION,APROBADA    <span class="comment">(múltiples valores)</span>
+?tipo_cert=LIBRE_DEUDA
+?urgencia=URGENTE
+?ciudadano_cuil=27-34567890-1
+?fecha_desde=2026-01-01
+?fecha_hasta=2026-02-28
+?revisor_id=3
+?search=García                  <span class="comment">(busca en nombre del ciudadano)</span>
+?page=1&amp;limit=20
+?sort=created_at&amp;order=asc</code></pre>
+
+            <h3>POST <code>/solicitudes</code></h3>
+            <pre><code><span class="comment">// Request</span>
+{
+  <span class="key">"tipo_cert"</span>: <span class="string">"LIBRE_DEUDA"</span>,
+  <span class="key">"urgencia"</span>: <span class="string">"NORMAL"</span>,
+  <span class="key">"observaciones"</span>: <span class="string">"Necesito el certificado para trámite bancario"</span>
+}
+
+<span class="comment">// Response 201</span>
+{
+  <span class="key">"id"</span>: <span class="number">42</span>,
+  <span class="key">"numero"</span>: <span class="string">"SOL-2026-042"</span>,
+  <span class="key">"estado"</span>: <span class="string">"PENDIENTE_REVISION"</span>,
+  <span class="key">"tipo_cert"</span>: <span class="string">"LIBRE_DEUDA"</span>,
+  <span class="key">"arancel"</span>: <span class="number">1500.00</span>,
+  <span class="key">"created_at"</span>: <span class="string">"2026-02-18T15:00:00Z"</span>
+}</code></pre>
+
+            <h3>PATCH <code>/solicitudes/:id/rechazar</code></h3>
+            <pre><code><span class="comment">// Request</span>
+{
+  <span class="key">"motivo_rechazo"</span>: <span class="string">"Documentación incompleta. Falta comprobante de domicilio."</span>,
+  <span class="key">"comentario"</span>: <span class="string">"Se notificó al ciudadano por email."</span>
+}
+
+<span class="comment">// Response 200</span>
+{
+  <span class="key">"id"</span>: <span class="number">42</span>,
+  <span class="key">"estado"</span>: <span class="string">"RECHAZADA"</span>,
+  <span class="key">"motivo_rechazo"</span>: <span class="string">"Documentación incompleta..."</span>,
+  <span class="key">"updated_at"</span>: <span class="string">"2026-02-18T16:00:00Z"</span>
+}</code></pre>
+        </div>
+
+        <!-- 4. PAGOS -->
+        <div class="section">
+            <h2>4. Pagos <code>/pagos</code> <span class="entity-tag">→ pagos, solicitudes</span></h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Método</th>
+                        <th>Endpoint</th>
+                        <th>Acceso</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/pagos/iniciar</td>
+                        <td class="access">👤</td>
+                        <td>Crear intención de pago en PlusPagos</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/pagos/:id</td>
+                        <td class="access">🔑</td>
+                        <td>Ver estado de un pago</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/pagos/solicitud/:solicitud_id</td>
+                        <td class="access">🔑</td>
+                        <td>Ver pago de una solicitud</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/pagos/webhook</td>
+                        <td class="access">🔓</td>
+                        <td>Recibir confirmación de PlusPagos (HMAC)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>POST <code>/pagos/iniciar</code></h3>
+            <pre><code><span class="comment">// Request</span>
+{
+  <span class="key">"solicitud_id"</span>: <span class="number">42</span>
+}
+
+<span class="comment">// Response 200</span>
+{
+  <span class="key">"pago_id"</span>: <span class="number">15</span>,
+  <span class="key">"checkout_url"</span>: <span class="string">"https://checkout.pluspagos.com/session/abc123"</span>,
+  <span class="key">"monto"</span>: <span class="number">1500.00</span>,
+  <span class="key">"moneda"</span>: <span class="string">"ARS"</span>,
+  <span class="key">"expires_at"</span>: <span class="string">"2026-02-18T16:00:00Z"</span>
+}</code></pre>
+
+            <h3>POST <code>/pagos/webhook</code> (PlusPagos → RDAM)</h3>
+            <pre><code><span class="comment">// Headers requeridos</span>
+<span class="comment">// X-PlusPagos-Signature: sha256=&lt;hmac&gt;</span>
+
+<span class="comment">// Payload</span>
+{
+  <span class="key">"referencia"</span>: <span class="string">"SOL-2026-042"</span>,
+  <span class="key">"estado"</span>: <span class="string">"APROBADO"</span>,
+  <span class="key">"monto"</span>: <span class="number">1500.00</span>,
+  <span class="key">"transaccion_id"</span>: <span class="string">"PP-TXN-789456"</span>,
+  <span class="key">"timestamp"</span>: <span class="string">"2026-02-18T15:30:00Z"</span>
+}
+
+<span class="comment">// Response 200</span>
+{ <span class="key">"ok"</span>: true }</code></pre>
+        </div>
+
+        <!-- 5. CERTIFICADOS -->
+        <div class="section">
+            <h2>5. Certificados <code>/certificados</code> <span class="entity-tag">→ certificados, solicitudes</span>
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Método</th>
+                        <th>Endpoint</th>
+                        <th>Acceso</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method method-post">POST</span></td>
+                        <td class="endpoint-path">/certificados/emitir</td>
+                        <td class="access">🏛️</td>
+                        <td>Generar y emitir certificado PDF</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/certificados/:id</td>
+                        <td class="access">🔑</td>
+                        <td>Ver metadatos del certificado</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/certificados/:id/descargar</td>
+                        <td class="access">🔑</td>
+                        <td>Descargar PDF (URL presignada S3)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/certificados/solicitud/:id</td>
+                        <td class="access">🔑</td>
+                        <td>Ver certificado de una solicitud</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/certificados/:id/verificar</td>
+                        <td class="access">🔓</td>
+                        <td>Verificar autenticidad del certificado</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>POST <code>/certificados/emitir</code></h3>
+            <pre><code><span class="comment">// Request</span>
+{
+  <span class="key">"solicitud_id"</span>: <span class="number">42</span>,
+  <span class="key">"comentario"</span>: <span class="string">"Certificado emitido conforme a la documentación presentada."</span>
+}
+
+<span class="comment">// Response 201</span>
+{
+  <span class="key">"id"</span>: <span class="number">8</span>,
+  <span class="key">"solicitud_id"</span>: <span class="number">42</span>,
+  <span class="key">"archivo_url"</span>: <span class="string">"https://storage.rdam.gob.ar/certs/SOL-2026-042.pdf"</span>,
+  <span class="key">"fecha_vencimiento"</span>: <span class="string">"2026-05-19"</span>,
+  <span class="key">"created_at"</span>: <span class="string">"2026-02-18T17:00:00Z"</span>
+}</code></pre>
+
+            <h3>GET <code>/certificados/:id/verificar</code> (público)</h3>
+            <pre><code><span class="comment">// Response 200 — Certificado válido</span>
+{
+  <span class="key">"valido"</span>: true,
+  <span class="key">"numero_solicitud"</span>: <span class="string">"SOL-2026-042"</span>,
+  <span class="key">"tipo"</span>: <span class="string">"LIBRE_DEUDA"</span>,
+  <span class="key">"ciudadano"</span>: <span class="string">"María García"</span>,
+  <span class="key">"emitido_por"</span>: <span class="string">"Municipalidad de RDAM"</span>,
+  <span class="key">"fecha_emision"</span>: <span class="string">"2026-02-18"</span>,
+  <span class="key">"fecha_vencimiento"</span>: <span class="string">"2026-05-19"</span>,
+  <span class="key">"firma_verificada"</span>: true
+}
+
+<span class="comment">// Response 200 — Certificado expirado</span>
+{
+  <span class="key">"valido"</span>: false,
+  <span class="key">"razon"</span>: <span class="string">"EXPIRADO"</span>
+}</code></pre>
+        </div>
+
+        <!-- 6. REPORTES -->
+        <div class="section">
+            <h2>6. Reportes <code>/reportes</code> <span class="entity-tag">→ solicitudes, pagos, certificados,
+                    usuarios</span></h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Método</th>
+                        <th>Endpoint</th>
+                        <th>Acceso</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/reportes/resumen</td>
+                        <td class="access">📊</td>
+                        <td>Métricas generales del sistema</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/reportes/solicitudes</td>
+                        <td class="access">📊</td>
+                        <td>Solicitudes por estado, tipo y período</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/reportes/tiempos</td>
+                        <td class="access">📊</td>
+                        <td>Tiempos promedio de resolución</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/reportes/gestores</td>
+                        <td class="access">📊</td>
+                        <td>Productividad por gestor</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method method-get">GET</span></td>
+                        <td class="endpoint-path">/reportes/exportar</td>
+                        <td class="access">📊</td>
+                        <td>Exportar datos en CSV</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>GET <code>/reportes/resumen</code></h3>
+            <pre><code><span class="comment">// Response 200</span>
+{
+  <span class="key">"periodo"</span>: <span class="string">"2026-02"</span>,
+  <span class="key">"solicitudes"</span>: {
+    <span class="key">"total"</span>: <span class="number">156</span>,
+    <span class="key">"pendiente_revision"</span>: <span class="number">12</span>,
+    <span class="key">"en_revision"</span>: <span class="number">8</span>,
+    <span class="key">"aprobadas"</span>: <span class="number">45</span>,
+    <span class="key">"rechazadas"</span>: <span class="number">11</span>,
+    <span class="key">"pendiente_pago"</span>: <span class="number">7</span>,
+    <span class="key">"pagadas"</span>: <span class="number">3</span>,
+    <span class="key">"emitidas"</span>: <span class="number">70</span>
+  },
+  <span class="key">"tiempo_promedio_resolucion_hs"</span>: <span class="number">18.4</span>,
+  <span class="key">"ingresos_mes"</span>: <span class="number">234000.00</span>
+}</code></pre>
+        </div>
+
+        <!-- 7. ERRORES -->
+        <div class="section">
+            <h2>7. Códigos de Error Estándar</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>HTTP</th>
+                        <th>Código Interno</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>400</code></td>
+                        <td>VALIDATION_ERROR</td>
+                        <td>Datos de entrada inválidos</td>
+                    </tr>
+                    <tr>
+                        <td><code>400</code></td>
+                        <td>INVALID_TRANSITION</td>
+                        <td>Transición de estado no permitida</td>
+                    </tr>
+                    <tr>
+                        <td><code>401</code></td>
+                        <td>UNAUTHORIZED</td>
+                        <td>Token ausente o inválido</td>
+                    </tr>
+                    <tr>
+                        <td><code>401</code></td>
+                        <td>TOKEN_EXPIRED</td>
+                        <td>Access token expirado</td>
+                    </tr>
+                    <tr>
+                        <td><code>403</code></td>
+                        <td>FORBIDDEN</td>
+                        <td>Sin permisos para esta acción</td>
+                    </tr>
+                    <tr>
+                        <td><code>403</code></td>
+                        <td>USER_INACTIVE</td>
+                        <td>Usuario desactivado</td>
+                    </tr>
+                    <tr>
+                        <td><code>404</code></td>
+                        <td>NOT_FOUND</td>
+                        <td>Recurso no encontrado</td>
+                    </tr>
+                    <tr>
+                        <td><code>409</code></td>
+                        <td>CONFLICT</td>
+                        <td>Conflicto (ej: email duplicado)</td>
+                    </tr>
+                    <tr>
+                        <td><code>422</code></td>
+                        <td>BUSINESS_RULE</td>
+                        <td>Regla de negocio violada</td>
+                    </tr>
+                    <tr>
+                        <td><code>429</code></td>
+                        <td>RATE_LIMITED</td>
+                        <td>Demasiadas solicitudes</td>
+                    </tr>
+                    <tr>
+                        <td><code>500</code></td>
+                        <td>INTERNAL_ERROR</td>
+                        <td>Error interno del servidor</td>
+                    </tr>
+                    <tr>
+                        <td><code>503</code></td>
+                        <td>SERVICE_UNAVAILABLE</td>
+                        <td>Servicio temporalmente no disponible</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Formato de error estándar</h3>
+            <pre><code>{
+  <span class="key">"error"</span>: {
+    <span class="key">"code"</span>: <span class="string">"VALIDATION_ERROR"</span>,
+    <span class="key">"message"</span>: <span class="string">"El campo 'email' no tiene un formato válido."</span>,
+    <span class="key">"field"</span>: <span class="string">"email"</span>,
+    <span class="key">"timestamp"</span>: <span class="string">"2026-02-18T15:00:00Z"</span>,
+    <span class="key">"request_id"</span>: <span class="string">"req_abc123"</span>
+  }
+}</code></pre>
+        </div>
+
+        <!-- 8. RATE LIMITING -->
+        <div class="section">
+            <h2>8. Rate Limiting</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Límite</th>
+                        <th>Ventana</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>POST /auth/login</code></td>
+                        <td>10 req</td>
+                        <td>15 min por IP</td>
+                    </tr>
+                    <tr>
+                        <td><code>POST /pagos/webhook</code></td>
+                        <td>100 req</td>
+                        <td>1 min por IP</td>
+                    </tr>
+                    <tr>
+                        <td>Endpoints públicos</td>
+                        <td>60 req</td>
+                        <td>1 min por IP</td>
+                    </tr>
+                    <tr>
+                        <td>Endpoints autenticados</td>
+                        <td>300 req</td>
+                        <td>1 min por usuario</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 9. RESUMEN POR ROL -->
+        <div class="section">
+            <h2>9. Resumen de Endpoints por Rol</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rol</th>
+                        <th>Endpoints Disponibles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Ciudadano</strong></td>
+                        <td><code>/auth/*</code>, <code>/usuarios/me</code>, <code>/solicitudes/mis</code>,
+                            <code>POST /solicitudes</code>, <code>GET /solicitudes/:id</code>,
+                            <code>POST /pagos/iniciar</code>, <code>GET /certificados/:id/descargar</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gestor</strong></td>
+                        <td>Todo lo anterior + <code>GET /solicitudes</code>, <code>PATCH /solicitudes/:id/tomar</code>,
+                            <code>PATCH /.../aprobar</code>, <code>PATCH /.../rechazar</code>,
+                            <code>POST /certificados/emitir</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Admin</strong></td>
+                        <td>Todo lo anterior + <code>GET/POST/PATCH/DELETE /usuarios</code>,
+                            <code>GET /reportes/*</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 10. MAPEO ENDPOINT ↔ ENTIDAD -->
+        <div class="section">
+            <h2>10. Mapeo Endpoint ↔ Entidad/Tabla</h2>
+            <p>Referencia cruzada entre cada grupo de endpoints y las tablas del DDL que operan.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Grupo</th>
+                        <th>Tabla Principal</th>
+                        <th>Tablas Relacionadas</th>
+                        <th>Operaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/auth</code></td>
+                        <td><code>usuarios</code></td>
+                        <td><code>refresh_tokens</code></td>
+                        <td>Login, registro, refresh/revoke tokens</td>
+                    </tr>
+                    <tr>
+                        <td><code>/usuarios</code></td>
+                        <td><code>usuarios</code></td>
+                        <td>—</td>
+                        <td>CRUD usuarios internos, perfil propio</td>
+                    </tr>
+                    <tr>
+                        <td><code>/solicitudes</code></td>
+                        <td><code>solicitudes</code></td>
+                        <td><code>historial_estados</code>, <code>usuarios</code></td>
+                        <td>CRUD solicitudes, transiciones de estado</td>
+                    </tr>
+                    <tr>
+                        <td><code>/pagos</code></td>
+                        <td><code>pagos</code></td>
+                        <td><code>solicitudes</code></td>
+                        <td>Iniciar pago, webhook, consultar estado</td>
+                    </tr>
+                    <tr>
+                        <td><code>/certificados</code></td>
+                        <td><code>certificados</code></td>
+                        <td><code>solicitudes</code>, <code>usuarios</code></td>
+                        <td>Emitir PDF, descargar, verificar</td>
+                    </tr>
+                    <tr>
+                        <td><code>/reportes</code></td>
+                        <td><code>solicitudes</code></td>
+                        <td><code>pagos</code>, <code>certificados</code>, <code>usuarios</code></td>
+                        <td>Métricas, exportación CSV</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Cobertura de Tablas DDL</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tabla DDL</th>
+                        <th>Endpoints que la Operan</th>
+                        <th>Acceso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>usuarios</code></td>
+                        <td><code>/auth/*</code>, <code>/usuarios/*</code></td>
+                        <td>R/W</td>
+                    </tr>
+                    <tr>
+                        <td><code>solicitudes</code></td>
+                        <td><code>/solicitudes/*</code>, <code>/pagos/*</code>, <code>/certificados/*</code>,
+                            <code>/reportes/*</code></td>
+                        <td>R/W</td>
+                    </tr>
+                    <tr>
+                        <td><code>historial_estados</code></td>
+                        <td><code>/solicitudes/:id/historial</code> (lectura), trigger automático (escritura)</td>
+                        <td>R (API) / W (trigger)</td>
+                    </tr>
+                    <tr>
+                        <td><code>pagos</code></td>
+                        <td><code>/pagos/*</code>, <code>/reportes/*</code></td>
+                        <td>R/W</td>
+                    </tr>
+                    <tr>
+                        <td><code>certificados</code></td>
+                        <td><code>/certificados/*</code>, <code>/reportes/*</code></td>
+                        <td>R/W</td>
+                    </tr>
+                    <tr>
+                        <td><code>refresh_tokens</code></td>
+                        <td><code>/auth/refresh</code>, <code>/auth/logout</code>, <code>/auth/logout-all</code></td>
+                        <td>R/W</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            RDAM — Mapa de Endpoints REST API | i2T Software Factory | Campus de Verano 2026 | Vinculado a DDL.sql
+        </div>
+    </div>
+</body>
+
+</html>

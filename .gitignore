@@ -1,0 +1,23 @@
+# Archivos del sistema
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos temporales de editores
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Archivos de impresión intermedios (no necesarios en el repo)
+ARQUITECTURA_print.html
+
+# Maven build output
+backend/target/
+mvn_out.txt
+
+# Node.js
+node_modules/
+frontend/dist/
