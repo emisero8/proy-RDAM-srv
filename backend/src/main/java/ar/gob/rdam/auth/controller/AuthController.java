@@ -44,6 +44,23 @@ public class AuthController {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // FLUJO CIUDADANO — Completar Perfil (primer ingreso)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * POST /auth/completar-perfil
+     * Paso 3 (primer ingreso): Ciudadano completa sus datos básicos.
+     * Requiere JWT válido (emitido en el paso 2).
+     * Si el ciudadano es menor de 18 años, la cuenta es eliminada.
+     */
+    @PostMapping("/completar-perfil")
+    public ResponseEntity<AuthResponse> completarPerfil(
+            @AuthenticationPrincipal Usuario usuario,
+            @Valid @RequestBody CompletarPerfilRequest request) {
+        return ResponseEntity.ok(authService.completarPerfil(usuario, request));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // FLUJO INTERNO — Credenciales + JWT
     // ═══════════════════════════════════════════════════════════════════════════
 

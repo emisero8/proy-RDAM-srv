@@ -6,7 +6,6 @@ import ar.gob.rdam.domain.entity.Solicitud;
 import ar.gob.rdam.domain.entity.Usuario;
 import ar.gob.rdam.domain.enums.EstadoSolicitud;
 import ar.gob.rdam.solicitudes.dto.CrearSolicitudRequest;
-import ar.gob.rdam.solicitudes.dto.RechazarSolicitudRequest;
 import ar.gob.rdam.solicitudes.dto.SolicitudDTO;
 import ar.gob.rdam.solicitudes.repository.HistorialEstadoRepository;
 import ar.gob.rdam.solicitudes.repository.SolicitudRepository;
@@ -23,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -45,6 +43,10 @@ public class SolicitudService {
     private final AtomicLong counter = new AtomicLong(1);
 
     // ─── Crear solicitud (ciudadano) ──────────────────────────────────────────
+    //
+    // Nuevo flujo: la solicitud nace directamente en PENDIENTE_PAGO.
+    // El ciudadano paga, y entonces el gestor/admin emite el certificado.
+    // No hay etapa de revisión ni aprobación.
 
     @Transactional
     public SolicitudDTO crear(CrearSolicitudRequest request, Usuario ciudadano) {
@@ -57,16 +59,16 @@ public class SolicitudService {
                 .tipoCert(request.getTipoCert())
                 .urgencia(request.getUrgencia())
                 .observaciones(request.getObservaciones())
-                .estado(EstadoSolicitud.PENDIENTE_REVISION)
+                .estado(EstadoSolicitud.PENDIENTE_PAGO)
                 .arancel(arancelLibreDeuda)
                 .build();
 
         s = solicitudRepository.save(s);
-        registrarHistorial(s, null, EstadoSolicitud.PENDIENTE_REVISION, ciudadano, "Solicitud creada");
+        registrarHistorial(s, null, EstadoSolicitud.PENDIENTE_PAGO, ciudadano, "Solicitud creada — pago requerido");
         return toDTO(s);
     }
 
-    // ─── Listar bandeja interna ───────────────────────────────────────────────
+    // ─── Listar bandeja interna (GESTOR/ADMIN) ────────────────────────────────
 
     @Transactional(readOnly = true)
     public Page<SolicitudDTO> listarTodas(EstadoSolicitud estado, String tipoCert, String urgencia,
@@ -88,7 +90,7 @@ public class SolicitudService {
         }
     }
 
-    // ─── Listar bandeja gestor (solo propias + pendientes) ────────────────────
+    // ─── Listar bandeja gestor ────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public Page<SolicitudDTO> listarParaGestor(Long gestorId, EstadoSolicitud estado, String tipoCert,
@@ -132,46 +134,12 @@ public class SolicitudService {
         return toDTO(s);
     }
 
-    // ─── Tomar solicitud (gestor) ─────────────────────────────────────────────
-
-    @Transactional
-    public SolicitudDTO tomar(Long id, Usuario revisor) {
-        Solicitud s = findOrThrow(id);
-        validarTransicion(s.getEstado(), EstadoSolicitud.EN_REVISION);
-        s.setRevisor(revisor);
-        cambiarEstado(s, EstadoSolicitud.EN_REVISION, revisor, "Solicitud tomada para revisión");
-        return toDTO(solicitudRepository.save(s));
-    }
-
-    // ─── Aprobar solicitud ────────────────────────────────────────────────────
-
-    @Transactional
-    public SolicitudDTO aprobar(Long id, String comentario, Usuario revisor) {
-        Solicitud s = findOrThrow(id);
-        validarTransicion(s.getEstado(), EstadoSolicitud.APROBADA);
-        cambiarEstado(s, EstadoSolicitud.APROBADA, revisor, comentario);
-        // Automáticamente pasa a PENDIENTE_PAGO
-        cambiarEstado(s, EstadoSolicitud.PENDIENTE_PAGO, revisor, "Pago requerido");
-        return toDTO(solicitudRepository.save(s));
-    }
-
-    // ─── Rechazar solicitud ───────────────────────────────────────────────────
-
-    @Transactional
-    public SolicitudDTO rechazar(Long id, RechazarSolicitudRequest request, Usuario revisor) {
-        Solicitud s = findOrThrow(id);
-        validarTransicion(s.getEstado(), EstadoSolicitud.RECHAZADA);
-        s.setMotivoRechazo(request.getMotivoRechazo());
-        cambiarEstado(s, EstadoSolicitud.RECHAZADA, revisor, request.getComentario());
-        return toDTO(solicitudRepository.save(s));
-    }
-
     // ─── Cancelar solicitud (ciudadano) ───────────────────────────────────────
+    // Solo se puede cancelar cuando está PENDIENTE_PAGO (antes de pagar).
 
     @Transactional
     public SolicitudDTO cancelar(Long id, Usuario ciudadano) {
         Solicitud s = findOrThrow(id);
-        // Solo el propio ciudadano puede cancelar
         if (!s.getCiudadano().getId().equals(ciudadano.getId())) {
             throw new BusinessException("FORBIDDEN", "Solo el ciudadano dueño puede cancelar la solicitud.");
         }
@@ -180,7 +148,7 @@ public class SolicitudService {
         return toDTO(solicitudRepository.save(s));
     }
 
-    // ─── Marcar como PAGADA (simulación directa, sin pasarela) ───────────────
+    // ─── Marcar como PAGADA (llamado desde PagoService/webhook) ──────────────
 
     @Transactional
     public void marcarComoPagada(Solicitud solicitud) {
@@ -228,24 +196,6 @@ public class SolicitudService {
                 .toList();
     }
 
-    // ─── Reasignar gestión (admin pisa al gestor actual) ─────────────────────
-
-    @Transactional
-    public SolicitudDTO reasignar(Long id, Usuario admin) {
-        Solicitud s = findOrThrow(id);
-        if (s.getEstado() != EstadoSolicitud.EN_REVISION) {
-            throw new BusinessException("BUSINESS_RULE",
-                    "Solo se puede reasignar una solicitud EN_REVISION.");
-        }
-        String gestorAnterior = s.getRevisor() != null
-                ? s.getRevisor().getNombre() + " " + s.getRevisor().getApellido()
-                : "sin gestor";
-        s.setRevisor(admin);
-        registrarHistorial(s, EstadoSolicitud.EN_REVISION, EstadoSolicitud.EN_REVISION,
-                admin, "Reasignada por administrador (anterior: " + gestorAnterior + ")");
-        return toDTO(solicitudRepository.save(s));
-    }
-
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     public Solicitud findOrThrow(Long id) {
@@ -272,26 +222,19 @@ public class SolicitudService {
     }
 
     private void validarTransicion(EstadoSolicitud actual, EstadoSolicitud destino) {
-        // Cancelar se permite desde cualquier estado no-terminal
+        // Cancelar solo se permite desde PENDIENTE_PAGO (antes de pagar)
         if (destino == EstadoSolicitud.CANCELADA) {
-            boolean cancelable = actual != EstadoSolicitud.CANCELADA
-                    && actual != EstadoSolicitud.RECHAZADA
-                    && actual != EstadoSolicitud.EMITIDA
-                    && actual != EstadoSolicitud.EXPIRADA;
-            if (!cancelable) {
+            if (actual != EstadoSolicitud.PENDIENTE_PAGO) {
                 throw new BusinessException("INVALID_TRANSITION",
-                        "No se puede cancelar una solicitud en estado " + actual);
+                        "Solo se puede cancelar una solicitud que aún no fue pagada.");
             }
             return;
         }
         boolean valida = switch (actual) {
-            case PENDIENTE_REVISION -> destino == EstadoSolicitud.EN_REVISION;
-            case EN_REVISION -> destino == EstadoSolicitud.APROBADA || destino == EstadoSolicitud.RECHAZADA;
-            case APROBADA -> destino == EstadoSolicitud.PENDIENTE_PAGO;
             case PENDIENTE_PAGO -> destino == EstadoSolicitud.PAGADA;
-            case PAGADA -> destino == EstadoSolicitud.EMITIDA;
-            case EMITIDA -> destino == EstadoSolicitud.EXPIRADA;
-            default -> false;
+            case PAGADA         -> destino == EstadoSolicitud.EMITIDA;
+            case EMITIDA        -> destino == EstadoSolicitud.EXPIRADA;
+            default             -> false;
         };
         if (!valida) {
             throw new BusinessException("INVALID_TRANSITION",

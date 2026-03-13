@@ -19,10 +19,6 @@ export default function DetalleSolicitud() {
     const [pagoLoading, setPagoLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Modal para rechazar
-    const [showReject, setShowReject] = useState(false);
-    const [motivoRechazo, setMotivoRechazo] = useState('');
-
     // Modal para emitir certificado (upload PDF)
     const [showEmitir, setShowEmitir] = useState(false);
     const [archivoPdf, setArchivoPdf] = useState(null);
@@ -52,21 +48,12 @@ export default function DetalleSolicitud() {
 
     useEffect(() => { fetchData(); }, [id]);
 
-    const handleAction = async (action, body = {}) => {
+    const handleAction = async (action) => {
         setActionLoading(true);
         setError('');
         try {
-            if (action === 'tomar') {
-                await api.patch(`/solicitudes/${id}/tomar`);
-            } else if (action === 'aprobar') {
-                await api.patch(`/solicitudes/${id}/aprobar`, { comentario: 'Documentación válida' });
-            } else if (action === 'rechazar') {
-                await api.patch(`/solicitudes/${id}/rechazar`, { motivoRechazo, comentario: 'Solicitud rechazada' });
-                setShowReject(false);
-            } else if (action === 'cancelar') {
+            if (action === 'cancelar') {
                 await api.patch(`/solicitudes/${id}/cancelar`);
-            } else if (action === 'reasignar') {
-                await api.patch(`/solicitudes/${id}/reasignar`);
             } else if (action === 'emitir') {
                 if (!archivoPdf) {
                     setError('Debe seleccionar un archivo PDF');
@@ -98,7 +85,7 @@ export default function DetalleSolicitud() {
             const res = await api.post('/pagos/iniciar', { solicitudId: parseInt(id) });
             const d = res.data;
 
-            // Construir formulario POST automático hacia PlusPagos (igual que test-pasarela-simple)
+            // Construir formulario POST automático hacia PlusPagos
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = d.plusPagosUrl;
@@ -125,7 +112,6 @@ export default function DetalleSolicitud() {
 
             document.body.appendChild(form);
             form.submit();
-            // El navegador redirigirá — no hay vuelta acá
         } catch (err) {
             setError(err.response?.data?.error?.message || 'Error al iniciar el pago');
             setPagoLoading(false);
@@ -156,7 +142,6 @@ export default function DetalleSolicitud() {
 
     const isGestor = user?.rol === 'GESTOR' || user?.rol === 'ADMIN';
     const isCiudadano = user?.rol === 'CIUDADANO';
-    const isAdmin = user?.rol === 'ADMIN';
 
     return (
         <div>
@@ -174,6 +159,18 @@ export default function DetalleSolicitud() {
             </div>
 
             {error && <div className="toast toast-error" style={{ marginBottom: '1rem' }}>{error}</div>}
+
+            {/* === Aviso informativo de estado para el ciudadano === */}
+            {isCiudadano && solicitud.estado === 'PENDIENTE_PAGO' && (
+                <div className="toast toast-info" style={{ marginBottom: '1rem' }}>
+                    💳 Tu solicitud está lista. Realizá el pago para que un gestor procese tu certificado.
+                </div>
+            )}
+            {isCiudadano && solicitud.estado === 'PAGADA' && (
+                <div className="toast toast-success" style={{ marginBottom: '1rem' }}>
+                    ✅ Pago recibido. Un gestor está procesando tu certificado. Te notificaremos cuando esté listo.
+                </div>
+            )}
 
             {/* === Detail Card === */}
             <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
@@ -194,44 +191,32 @@ export default function DetalleSolicitud() {
                         <span className="detail-label">Fecha Creación</span>
                         <span className="detail-value">{formatDate(solicitud.createdAt)}</span>
                     </div>
-                    {solicitud.motivoRechazo && (
-                        <div className="detail-field" style={{ gridColumn: '1 / -1' }}>
-                            <span className="detail-label">Motivo de Rechazo</span>
-                            <span className="detail-value" style={{ color: 'var(--color-error)' }}>{solicitud.motivoRechazo}</span>
-                        </div>
-                    )}
                     {solicitud.observaciones && (
                         <div className="detail-field" style={{ gridColumn: '1 / -1' }}>
                             <span className="detail-label">Observaciones</span>
                             <span className="detail-value">{solicitud.observaciones}</span>
                         </div>
                     )}
-                    {solicitud.revisorNombre && (
-                        <div className="detail-field">
-                            <span className="detail-label">Gestor asignado</span>
-                            <span className="detail-value">👤 {solicitud.revisorNombre}</span>
-                        </div>
+                    {/* Datos del ciudadano — solo visible para gestores/admins */}
+                    {isGestor && (
+                        <>
+                            <div className="detail-field">
+                                <span className="detail-label">Ciudadano</span>
+                                <span className="detail-value">👤 {solicitud.ciudadanoNombre}</span>
+                            </div>
+                            <div className="detail-field">
+                                <span className="detail-label">Email</span>
+                                <span className="detail-value">{solicitud.ciudadanoEmail}</span>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
 
             {/* === Actions === */}
             <div className="actions-bar" style={{ marginBottom: 'var(--space-lg)' }}>
-                {isGestor && solicitud.estado === 'PENDIENTE_REVISION' && (
-                    <button className="btn btn-primary" onClick={() => handleAction('tomar')} disabled={actionLoading} id="btn-tomar">
-                        📋 Tomar Solicitud
-                    </button>
-                )}
-                {isGestor && solicitud.estado === 'EN_REVISION' && (
-                    <>
-                        <button className="btn btn-success" onClick={() => handleAction('aprobar')} disabled={actionLoading} id="btn-aprobar">
-                            ✅ Aprobar
-                        </button>
-                        <button className="btn btn-danger" onClick={() => setShowReject(true)} disabled={actionLoading} id="btn-rechazar">
-                            ❌ Rechazar
-                        </button>
-                    </>
-                )}
+
+                {/* Ciudadano: pagar cuando está PENDIENTE_PAGO */}
                 {isCiudadano && solicitud.estado === 'PENDIENTE_PAGO' && (
                     <button
                         className="btn btn-primary"
@@ -242,27 +227,25 @@ export default function DetalleSolicitud() {
                         {pagoLoading ? '⏳ Conectando con pasarela...' : '💳 Pagar con PlusPagos'}
                     </button>
                 )}
+
+                {/* Gestor/Admin: emitir certificado cuando está PAGADA */}
                 {isGestor && solicitud.estado === 'PAGADA' && (
                     <button className="btn btn-success" onClick={() => setShowEmitir(true)} disabled={actionLoading} id="btn-emitir">
                         📜 Emitir Certificado
                     </button>
                 )}
+
                 {/* Descargar certificado — visible para todos cuando EMITIDA */}
                 {solicitud.estado === 'EMITIDA' && certificado && (
                     <button className="btn btn-primary" onClick={handleDescargar} id="btn-descargar">
                         📥 Descargar Certificado PDF
                     </button>
                 )}
-                {/* Cancelar — ciudadano en cualquier estado no-terminal */}
-                {isCiudadano && !['CANCELADA', 'RECHAZADA', 'EMITIDA', 'EXPIRADA'].includes(solicitud.estado) && (
+
+                {/* Ciudadano: cancelar — solo mientras PENDIENTE_PAGO (antes de pagar) */}
+                {isCiudadano && solicitud.estado === 'PENDIENTE_PAGO' && (
                     <button className="btn btn-danger" onClick={() => handleAction('cancelar')} disabled={actionLoading} id="btn-cancelar">
                         🚫 Cancelar Solicitud
-                    </button>
-                )}
-                {/* Reasignar — sólo Admin cuando está EN_REVISION */}
-                {isAdmin && solicitud.estado === 'EN_REVISION' && solicitud.revisorId !== user?.id && (
-                    <button className="btn btn-secondary" onClick={() => handleAction('reasignar')} disabled={actionLoading} id="btn-reasignar">
-                        🔄 Tomar gestión
                     </button>
                 )}
             </div>
@@ -284,37 +267,6 @@ export default function DetalleSolicitud() {
                     </div>
                 </div>
             )}
-
-            {/* === Reject Modal === */}
-            <Modal
-                isOpen={showReject}
-                onClose={() => setShowReject(false)}
-                title="Rechazar Solicitud"
-                footer={
-                    <>
-                        <button className="btn btn-secondary" onClick={() => setShowReject(false)}>Cancelar</button>
-                        <button
-                            className="btn btn-danger"
-                            onClick={() => handleAction('rechazar')}
-                            disabled={!motivoRechazo.trim() || actionLoading}
-                            id="btn-confirmar-rechazo"
-                        >
-                            Confirmar Rechazo
-                        </button>
-                    </>
-                }
-            >
-                <div className="form-group">
-                    <label className="form-label">Motivo del rechazo *</label>
-                    <textarea
-                        className="form-textarea"
-                        value={motivoRechazo}
-                        onChange={(e) => setMotivoRechazo(e.target.value)}
-                        placeholder="Indicá el motivo del rechazo..."
-                        required
-                    />
-                </div>
-            </Modal>
 
             {/* === Emitir Certificado Modal (Upload PDF) === */}
             <Modal

@@ -8,7 +8,8 @@ import { ESTADOS } from '../../utils/constants';
 export default function Bandeja() {
     const [solicitudes, setSolicitudes] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filtroEstado, setFiltroEstado] = useState('');
+    // Mostrar PAGADAS por defecto: son las que el gestor debe procesar
+    const [filtroEstado, setFiltroEstado] = useState('PAGADA');
     const navigate = useNavigate();
 
     const fetchSolicitudes = async () => {
@@ -34,7 +35,7 @@ export default function Bandeja() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">Bandeja de Solicitudes</h1>
-                    <p className="page-subtitle">Gestión interna de trámites</p>
+                    <p className="page-subtitle">Solicitudes pagadas para emitir certificado</p>
                 </div>
             </div>
 
@@ -57,7 +58,11 @@ export default function Bandeja() {
             ) : solicitudes.length === 0 ? (
                 <div className="empty-state">
                     <div className="empty-state-icon">📭</div>
-                    <p>No hay solicitudes con el filtro seleccionado.</p>
+                    <p>
+                        {filtroEstado === 'PAGADA'
+                            ? 'No hay solicitudes pagadas pendientes de emisión.'
+                            : 'No hay solicitudes con el filtro seleccionado.'}
+                    </p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: 'var(--space-lg)' }}>

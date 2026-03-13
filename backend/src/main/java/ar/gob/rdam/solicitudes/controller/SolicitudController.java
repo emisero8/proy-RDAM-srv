@@ -4,7 +4,6 @@ import ar.gob.rdam.domain.entity.Solicitud;
 import ar.gob.rdam.domain.entity.Usuario;
 import ar.gob.rdam.domain.enums.EstadoSolicitud;
 import ar.gob.rdam.solicitudes.dto.CrearSolicitudRequest;
-import ar.gob.rdam.solicitudes.dto.RechazarSolicitudRequest;
 import ar.gob.rdam.solicitudes.dto.SolicitudDTO;
 import ar.gob.rdam.solicitudes.service.SolicitudService;
 import jakarta.validation.Valid;
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/solicitudes")
@@ -73,7 +71,10 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.getById(id, usuario));
     }
 
-    /** POST /solicitudes — Crear nueva solicitud (ciudadano) */
+    /**
+     * POST /solicitudes — Crear nueva solicitud (ciudadano).
+     * La solicitud nace directamente en PENDIENTE_PAGO.
+     */
     @PostMapping
     public ResponseEntity<SolicitudDTO> crear(
             @Valid @RequestBody CrearSolicitudRequest request,
@@ -81,34 +82,10 @@ public class SolicitudController {
         return ResponseEntity.status(HttpStatus.CREATED).body(solicitudService.crear(request, ciudadano));
     }
 
-    /** PATCH /solicitudes/:id/tomar */
-    @PatchMapping("/{id}/tomar")
-    public ResponseEntity<SolicitudDTO> tomar(
-            @PathVariable Long id,
-            @AuthenticationPrincipal Usuario revisor) {
-        return ResponseEntity.ok(solicitudService.tomar(id, revisor));
-    }
-
-    /** PATCH /solicitudes/:id/aprobar */
-    @PatchMapping("/{id}/aprobar")
-    public ResponseEntity<SolicitudDTO> aprobar(
-            @PathVariable Long id,
-            @RequestBody(required = false) Map<String, String> body,
-            @AuthenticationPrincipal Usuario revisor) {
-        String comentario = body != null ? body.get("comentario") : null;
-        return ResponseEntity.ok(solicitudService.aprobar(id, comentario, revisor));
-    }
-
-    /** PATCH /solicitudes/:id/rechazar */
-    @PatchMapping("/{id}/rechazar")
-    public ResponseEntity<SolicitudDTO> rechazar(
-            @PathVariable Long id,
-            @Valid @RequestBody RechazarSolicitudRequest request,
-            @AuthenticationPrincipal Usuario revisor) {
-        return ResponseEntity.ok(solicitudService.rechazar(id, request, revisor));
-    }
-
-    /** PATCH /solicitudes/:id/cancelar (ciudadano) */
+    /**
+     * PATCH /solicitudes/:id/cancelar — Ciudadano cancela su solicitud.
+     * Solo permitido mientras está en PENDIENTE_PAGO (antes de pagar).
+     */
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<SolicitudDTO> cancelar(
             @PathVariable Long id,
@@ -116,7 +93,10 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.cancelar(id, ciudadano));
     }
 
-    /** PATCH /solicitudes/:id/pagar — Simulación de pago directo (sin pasarela) */
+    /**
+     * PATCH /solicitudes/:id/pagar — Simulación de pago directo (sin pasarela).
+     * Solo para testing/dev. En producción el pago real viene por webhook de PlusPagos.
+     */
     @PatchMapping("/{id}/pagar")
     public ResponseEntity<SolicitudDTO> pagar(
             @PathVariable Long id,
@@ -134,13 +114,5 @@ public class SolicitudController {
     @GetMapping("/{id}/historial")
     public ResponseEntity<List<SolicitudDTO.HistorialEstadoDTO>> historial(@PathVariable Long id) {
         return ResponseEntity.ok(solicitudService.getHistorial(id));
-    }
-
-    /** PATCH /solicitudes/:id/reasignar — Admin pisa la gestión abierta */
-    @PatchMapping("/{id}/reasignar")
-    public ResponseEntity<SolicitudDTO> reasignar(
-            @PathVariable Long id,
-            @AuthenticationPrincipal Usuario admin) {
-        return ResponseEntity.ok(solicitudService.reasignar(id, admin));
     }
 }

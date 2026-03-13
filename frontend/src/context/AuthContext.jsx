@@ -41,6 +41,21 @@ export function AuthProvider({ children }) {
         }
     }, []);
 
+    // ─── Ciudadano: Paso 3 — Completar perfil (primer ingreso) ───────────
+    const completarPerfil = useCallback(async (datos) => {
+        setLoading(true);
+        try {
+            const { data } = await api.post('/auth/completar-perfil', datos);
+            // Actualizar datos del usuario en localStorage y estado
+            const userData = { ...data.usuario, portal: data.portal };
+            localStorage.setItem('user', JSON.stringify(userData));
+            setUser(userData);
+            return userData;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     // ─── Login Admin/Gestor (con contraseña) ─────────────────────────────
     const loginAdmin = useCallback(async (identificador, password) => {
         setLoading(true);
@@ -82,6 +97,7 @@ export function AuthProvider({ children }) {
         rol,
         solicitarCodigo,
         validarCodigo,
+        completarPerfil,
         loginAdmin,
         logout,
     };

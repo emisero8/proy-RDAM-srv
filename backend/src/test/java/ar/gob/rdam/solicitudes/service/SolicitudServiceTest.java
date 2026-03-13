@@ -7,7 +7,6 @@ import ar.gob.rdam.domain.enums.EstadoSolicitud;
 import ar.gob.rdam.domain.enums.RolUsuario;
 import ar.gob.rdam.domain.enums.TipoUsuario;
 import ar.gob.rdam.solicitudes.dto.CrearSolicitudRequest;
-import ar.gob.rdam.solicitudes.dto.RechazarSolicitudRequest;
 import ar.gob.rdam.solicitudes.repository.HistorialEstadoRepository;
 import ar.gob.rdam.solicitudes.repository.SolicitudRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +39,7 @@ class SolicitudServiceTest {
 
     private Usuario ciudadano;
     private Usuario gestor;
-    private Solicitud solicitudPendiente;
+    private Solicitud solicitudPendientePago;
 
     @BeforeEach
     void setUp() {
@@ -55,19 +54,20 @@ class SolicitudServiceTest {
                 .id(2L).nombre("Laura").apellido("Martínez").email("laura@rdam.gob.ar")
                 .tipo(TipoUsuario.INTERNO).rol(RolUsuario.GESTOR).activo(true).build();
 
-        solicitudPendiente = Solicitud.builder()
+        // En el nuevo flujo, las solicitudes nacen en PENDIENTE_PAGO
+        solicitudPendientePago = Solicitud.builder()
                 .id(1L).numero("SOL-2026-001")
                 .ciudadano(ciudadano)
                 .tipoCert("LIBRE_DEUDA")
                 .urgencia("NORMAL")
-                .estado(EstadoSolicitud.PENDIENTE_REVISION)
+                .estado(EstadoSolicitud.PENDIENTE_PAGO)
                 .arancel(new BigDecimal("1500.00"))
                 .build();
     }
 
     @Test
-    @DisplayName("crear: nueva solicitud se crea en estado PENDIENTE_REVISION")
-    void crear_debeCrearSolicitudEnEstadoPendiente() {
+    @DisplayName("crear: nueva solicitud nace directamente en PENDIENTE_PAGO")
+    void crear_debeCrearSolicitudEnEstadoPendientePago() {
         when(solicitudRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         CrearSolicitudRequest req = new CrearSolicitudRequest();
@@ -77,59 +77,56 @@ class SolicitudServiceTest {
         var dto = solicitudService.crear(req, ciudadano);
 
         assertNotNull(dto);
-        assertEquals(EstadoSolicitud.PENDIENTE_REVISION, dto.getEstado());
+        assertEquals(EstadoSolicitud.PENDIENTE_PAGO, dto.getEstado());
         assertEquals(new BigDecimal("1500.00"), dto.getArancel());
         verify(historialRepository, times(1)).save(any());
     }
 
     @Test
-    @DisplayName("tomar: transición PENDIENTE_REVISION → EN_REVISION es válida")
-    void tomar_estadoValido_debeTransicionarAEnRevision() {
-        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendiente));
+    @DisplayName("cancelar: ciudadano puede cancelar su solicitud desde PENDIENTE_PAGO")
+    void cancelar_desdePendientePago_debeTransicionarACancelada() {
+        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendientePago));
         when(solicitudRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        var dto = solicitudService.tomar(1L, gestor);
+        var dto = solicitudService.cancelar(1L, ciudadano);
 
-        assertEquals(EstadoSolicitud.EN_REVISION, dto.getEstado());
+        assertEquals(EstadoSolicitud.CANCELADA, dto.getEstado());
     }
 
     @Test
-    @DisplayName("tomar: transición inválida desde RECHAZADA lanza INVALID_TRANSITION")
-    void tomar_desde_rechazada_debeLanzarInvalidTransition() {
-        solicitudPendiente.setEstado(EstadoSolicitud.RECHAZADA);
-        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendiente));
+    @DisplayName("cancelar: no se puede cancelar una solicitud ya PAGADA")
+    void cancelar_desdePagada_debeLanzarInvalidTransition() {
+        solicitudPendientePago.setEstado(EstadoSolicitud.PAGADA);
+        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendientePago));
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> solicitudService.tomar(1L, gestor));
+                () -> solicitudService.cancelar(1L, ciudadano));
         assertEquals("INVALID_TRANSITION", ex.getCode());
     }
 
     @Test
-    @DisplayName("rechazar: requiere motivo de rechazo")
-    void rechazar_conMotivo_debeRechazarYRegistrarHistorial() {
-        solicitudPendiente.setEstado(EstadoSolicitud.EN_REVISION);
-        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendiente));
-        when(solicitudRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    @DisplayName("cancelar: ciudadano no puede cancelar solicitud ajena")
+    void cancelar_solicitudAjena_debeLanzarForbidden() {
+        Usuario otroCiudadano = Usuario.builder()
+                .id(99L).nombre("Otro").apellido("Ciudadano").email("otro@test.com")
+                .tipo(TipoUsuario.CIUDADANO).rol(RolUsuario.CIUDADANO).activo(true).build();
 
-        RechazarSolicitudRequest req = new RechazarSolicitudRequest();
-        req.setMotivoRechazo("Documentación incompleta");
+        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendientePago));
 
-        var dto = solicitudService.rechazar(1L, req, gestor);
-
-        assertEquals(EstadoSolicitud.RECHAZADA, dto.getEstado());
-        assertEquals("Documentación incompleta", dto.getMotivoRechazo());
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> solicitudService.cancelar(1L, otroCiudadano));
+        assertEquals("FORBIDDEN", ex.getCode());
     }
 
     @Test
-    @DisplayName("aprobar: transición EN_REVISION → APROBADA → PENDIENTE_PAGO (automático)")
-    void aprobar_estadoValido_debeTransicionarHastaPendientePago() {
-        solicitudPendiente.setEstado(EstadoSolicitud.EN_REVISION);
-        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendiente));
+    @DisplayName("marcarComoPagada: transición PENDIENTE_PAGO → PAGADA es válida")
+    void marcarComoPagada_desdePendientePago_debeTransicionarAPagada() {
         when(solicitudRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        var dto = solicitudService.aprobar(1L, "Todo correcto", gestor);
+        solicitudService.marcarComoPagada(solicitudPendientePago);
 
-        assertEquals(EstadoSolicitud.PENDIENTE_PAGO, dto.getEstado());
+        assertEquals(EstadoSolicitud.PAGADA, solicitudPendientePago.getEstado());
+        verify(historialRepository, times(1)).save(any());
     }
 
     @Test
@@ -139,7 +136,7 @@ class SolicitudServiceTest {
                 .id(99L).nombre("Otro").apellido("Ciudadano").email("otro@test.com")
                 .tipo(TipoUsuario.CIUDADANO).rol(RolUsuario.CIUDADANO).activo(true).build();
 
-        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendiente));
+        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendientePago));
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> solicitudService.getById(1L, otroCiudadano));

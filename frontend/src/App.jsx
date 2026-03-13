@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 // ─── Pages ──────────────────────────────────────────────────────────────────
 import LoginCiudadano from './pages/LoginCiudadano';
 import LoginAdmin from './pages/LoginAdmin';
+import CompletarPerfil from './pages/CompletarPerfil';
 import MisSolicitudes from './pages/ciudadano/MisSolicitudes';
 import NuevaSolicitud from './pages/ciudadano/NuevaSolicitud';
 import DetalleSolicitud from './pages/ciudadano/DetalleSolicitud';
@@ -22,6 +23,7 @@ export default function App() {
           {/* ─── Rutas públicas (auth) ─────────────────────────────── */}
           <Route path="/login" element={<LoginCiudadano />} />
           <Route path="/admin/login" element={<LoginAdmin />} />
+          <Route path="/completar-perfil" element={<CompletarPerfil />} />
           {/* Resultado de pago — accesible sin login (PlusPagos redirige acá) */}
           <Route path="/pago/resultado" element={<ResultadoPago />} />
 

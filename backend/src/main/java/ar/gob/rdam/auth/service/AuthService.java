@@ -16,7 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.Map;
 import java.util.UUID;
 
@@ -77,6 +79,7 @@ public class AuthService {
                             .tipo(TipoUsuario.CIUDADANO)
                             .rol(RolUsuario.CIUDADANO)
                             .activo(true)
+                            .perfilCompleto(false)
                             .build();
                     return usuarioRepository.save(nuevo);
                 });
@@ -149,6 +152,40 @@ public class AuthService {
         });
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // COMPLETAR PERFIL — Onboarding primer ingreso
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * El ciudadano completa sus datos básicos en el primer ingreso.
+     * Si es menor de 18 años, se elimina la cuenta y se lanza una excepción.
+     */
+    @Transactional
+    public AuthResponse completarPerfil(Usuario usuario, CompletarPerfilRequest request) {
+        // Validar mayoría de edad
+        int edad = Period.between(request.getFechaNacimiento(), LocalDate.now()).getYears();
+        if (edad < 18) {
+            log.warn("Intento de registro de menor de edad para: {}", usuario.getEmail());
+            // Revocar todos los tokens antes de borrar
+            refreshTokenRepository.revocarTodosByUsuario(usuario);
+            // Eliminar el usuario del sistema
+            usuarioRepository.deleteById(usuario.getId());
+            throw new BusinessException("MENOR_DE_EDAD",
+                    "Debés ser mayor de 18 años para utilizar este servicio. La cuenta ha sido eliminada.");
+        }
+
+        // Completar perfil del ciudadano
+        usuario.setNombre(request.getNombre().trim());
+        usuario.setApellido(request.getApellido().trim());
+        usuario.setDniCuil(request.getDniCuil().trim());
+        usuario.setFechaNacimiento(request.getFechaNacimiento());
+        usuario.setPerfilCompleto(true);
+        usuarioRepository.save(usuario);
+
+        log.info("Perfil completado para ciudadano: {}", usuario.getEmail());
+        return buildCiudadanoAuthResponse(usuario);
+    }
+
     @Transactional
     public void logoutAll(Usuario usuario) {
         refreshTokenRepository.revocarTodosByUsuario(usuario);
@@ -198,6 +235,7 @@ public class AuthService {
                         .apellido(usuario.getApellido())
                         .email(usuario.getEmail())
                         .rol(usuario.getRol().name())
+                        .perfilCompleto(Boolean.TRUE.equals(usuario.getPerfilCompleto()))
                         .build())
                 .build();
     }

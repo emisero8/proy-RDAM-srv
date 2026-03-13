@@ -1,20 +1,32 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function LoginCiudadano() {
-    const [step, setStep] = useState(1); // 1 = pedir email, 2 = ingresar código
+    const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [codigo, setCodigo] = useState('');
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const { solicitarCodigo, validarCodigo, loading, isAuthenticated, user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Mostrar aviso si volvemos del rechazo de menores
+    useEffect(() => {
+        if (location.state?.menorRechazado) {
+            setError('Acceso denegado: debés ser mayor de 18 años. Tu cuenta fue eliminada del sistema.');
+        }
+    }, [location.state]);
 
     // Redirigir automáticamente si ya está autenticado
     useEffect(() => {
         if (isAuthenticated && user?.portal === 'CIUDADANO') {
-            navigate('/solicitudes/mis', { replace: true });
+            if (user?.perfilCompleto === false) {
+                navigate('/completar-perfil', { replace: true });
+            } else {
+                navigate('/solicitudes/mis', { replace: true });
+            }
         }
     }, [isAuthenticated, user, navigate]);
 
@@ -38,8 +50,13 @@ export default function LoginCiudadano() {
         e.preventDefault();
         setError('');
         try {
-            await validarCodigo(email, codigo);
-            // La redirección ocurrirá por el useEffect cuando el contexto se actualice
+            const userData = await validarCodigo(email, codigo);
+            // Redirigir según si el perfil ya fue completado
+            if (userData?.perfilCompleto === false) {
+                navigate('/completar-perfil', { replace: true });
+            } else {
+                navigate('/solicitudes/mis', { replace: true });
+            }
         } catch (err) {
             const msg = err.response?.data?.error?.message || 'Código inválido o expirado';
             setError(msg);
