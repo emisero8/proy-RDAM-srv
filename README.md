@@ -8,10 +8,10 @@
 | Archivo | Descripción |
 |---------|-------------|
 | `poc-rdam.html` | POC navegable de alta fidelidad — abrir directamente en el navegador |
-| `ALCANCE.md` | Documento de alcance del proyecto (módulos, historias, plan de entrega) |
-| `ARQUITECTURA.html` | Diagrama de arquitectura visual — abrir en el navegador |
-| `SPEC.md` | Especificación funcional completa (roles, datos, estados, integraciones) |
-| `IMPLEMENTACION.md` | Guía de implementación con plan de sprints y decisiones técnicas |
+| `ALCANCE.pdf` | Documento de alcance del proyecto (módulos, historias, plan de entrega) |
+| `ARQUITECTURA.pdf` | Diagrama de arquitectura visual |
+| `SPEC.pdf` | Especificación funcional completa (roles, datos, estados, integraciones) |
+| `IMPLEMENTACION.pdf` | Guía de implementación con plan de sprints y decisiones técnicas |
 | `README.md` | Este archivo — índice del paquete |
 
 ## Cómo Usar
@@ -27,15 +27,15 @@ Abrir `poc-rdam.html` en cualquier navegador moderno (Chrome, Firefox, Edge). El
 - **Toasts de notificación** para feedback de acciones
 
 ### 2. Revisar la Especificación
-Leer `SPEC.md` para entender el alcance funcional completo: modelo de datos, flujo de estados, integraciones, y requisitos no funcionales.
+Leer `SPEC.pdf` para entender el alcance funcional completo: modelo de datos, flujo de estados, integraciones, y requisitos no funcionales.
 
 ### 3. Planificar la Implementación
-Seguir `IMPLEMENTACION.md` para el plan de sprints (5 sprints, ~9 semanas), decisiones técnicas, estrategia de testing y deployment.
+Seguir `IMPLEMENTACION.pdf` para el plan de sprints (5 sprints, ~9 semanas), decisiones técnicas, estrategia de testing y deployment.
 
 ## Resumen del Sistema
 
 > **RDAM en una frase:** Todo digital, todo trazable y todo simple.
 
-El flujo principal es: **Solicitar → Revisar → Aprobar → Pagar → Emitir → Descargar**
+El flujo principal es: **Solicitar → Pagar → Revisar → Emitir → Descargar**
 
-Tres perfiles de usuario: **Ciudadano** (solicita y paga), **Interno** (revisa y emite), **Administrador** (gestiona usuarios).
+Tres perfiles de usuario: **Ciudadano** (solicita y paga), **Interno** (emite certificado), **Administrador** (gestiona usuarios).
