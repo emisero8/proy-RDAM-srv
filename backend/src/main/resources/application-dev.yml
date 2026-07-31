@@ -26,15 +26,18 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-  # ─── Mail (desactivar verificación health en dev) ────────────────────────────
+  # ─── Mail (MailHog por defecto, Gmail si se pasan env vars) ─────────────────
   mail:
-    host: localhost
-    port: 25
-    username: dev
-    password: dev
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
-      mail.smtp.auth: false
-      mail.smtp.starttls.enable: false
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
 
 management:
   health:
@@ -49,6 +52,8 @@ jwt:
 
 # ─── RDAM Negocio ─────────────────────────────────────────────────────────────
 rdam:
+  mail:
+    from: dev@rdam.local
   auth:
     codigo-ttl-minutos: 15
     codigo-max-intentos: 5

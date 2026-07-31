@@ -44,21 +44,8 @@ public class AuthController {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // FLUJO CIUDADANO — Completar Perfil (primer ingreso)
+    // (completar-perfil eliminado, los datos se manejan al crear Solicitud)
     // ═══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * POST /auth/completar-perfil
-     * Paso 3 (primer ingreso): Ciudadano completa sus datos básicos.
-     * Requiere JWT válido (emitido en el paso 2).
-     * Si el ciudadano es menor de 18 años, la cuenta es eliminada.
-     */
-    @PostMapping("/completar-perfil")
-    public ResponseEntity<AuthResponse> completarPerfil(
-            @AuthenticationPrincipal Usuario usuario,
-            @Valid @RequestBody CompletarPerfilRequest request) {
-        return ResponseEntity.ok(authService.completarPerfil(usuario, request));
-    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // FLUJO INTERNO — Credenciales + JWT
@@ -101,8 +88,12 @@ public class AuthController {
      * Revocar todos los refresh tokens del usuario autenticado
      */
     @PostMapping("/logout-all")
-    public ResponseEntity<Map<String, String>> logoutAll(@AuthenticationPrincipal Usuario usuario) {
-        authService.logoutAll(usuario);
+    public ResponseEntity<Map<String, String>> logoutAll(@AuthenticationPrincipal Object principal) {
+        if (principal instanceof Usuario) {
+            authService.logoutAll((Usuario) principal);
+        } else if (principal instanceof String) {
+            authService.logoutAllByEmail((String) principal);
+        }
         return ResponseEntity.ok(Map.of("message", "Todas las sesiones han sido cerradas."));
     }
 }

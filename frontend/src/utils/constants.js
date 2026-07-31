@@ -8,6 +8,7 @@ export const ESTADOS = {
     EMITIDA:         { label: 'Emitida',             className: 'badge-emitida' },
     EXPIRADA:        { label: 'Expirada',            className: 'badge-expirada' },
     CANCELADA:       { label: 'Cancelada',           className: 'badge-rechazada' },
+    RECHAZADA:       { label: 'Rechazada',           className: 'badge-rechazada' },
 };
 
 export const ROLES = {

@@ -104,8 +104,8 @@ export default function CompletarPerfil() {
                 </div>
 
                 <div style={{
-                    background: 'rgba(45,121,240,0.08)',
-                    border: '1px solid rgba(45,121,240,0.25)',
+                    background: 'rgba(201, 162, 86, 0.08)',
+                    border: '1px solid rgba(201, 162, 86, 0.25)',
                     borderRadius: 'var(--radius-md)',
                     padding: '0.875rem 1rem',
                     marginBottom: '1.5rem',

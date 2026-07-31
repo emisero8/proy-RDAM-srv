@@ -6,6 +6,7 @@
 # Servicios:
 #   db        — PostgreSQL 16 (inicializado con DDL.sql)
 #   pasarela  — PlusPagos mock (Node.js, puerto 3000)
+#   mailhog   — Servidor SMTP de pruebas (SMTP 1025, Web 8025)
 #   backend   — Spring Boot API (puerto 8080)
 #   frontend  — React + Nginx (puerto 5173)
 #
@@ -32,8 +33,8 @@ services:
       - "5432:5432"
     volumes:
       - rdam-pgdata:/var/lib/postgresql/data
-      # El DDL.sql se ejecuta automáticamente la primera vez que se crea el volumen
-      - ./docker/init-db:/docker-entrypoint-initdb.d:ro
+      # Flyway and DataInitializer handle schema and seed data now
+      # - ./docker/init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rdam_user -d rdam"]
       interval: 5s
@@ -56,6 +57,17 @@ services:
       WEBHOOK_URL: http://backend:8080/v1/pagos/webhook
 
   # ─────────────────────────
+  # MailHog (SMTP de pruebas)
+  # ─────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: rdam-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+  # ─────────────────────────
   # Backend Spring Boot
   # ─────────────────────────
   backend:
@@ -68,6 +80,8 @@ services:
       db:
         condition: service_healthy
       pasarela:
+        condition: service_started
+      mailhog:
         condition: service_started
     ports:
       - "8080:8080"
@@ -83,6 +97,17 @@ services:
       # Spring profile
       SPRING_PROFILES_ACTIVE: dev
       CERT_STORAGE_PATH: /app/dev-certs
+      # ── Mail: MailHog (desarrollo) ──────────────────────────────
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      # ── Mail: Gmail (descomentar para demo en vivo) ────────────
+      # MAIL_HOST: smtp.gmail.com
+      # MAIL_PORT: 587
+      # MAIL_USERNAME: 
+      # MAIL_PASSWORD: 
+      # MAIL_FROM: 
+      # MAIL_SMTP_AUTH: true
+      # MAIL_SMTP_STARTTLS: true
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/v1/actuator/health || exit 1"]
       interval: 15s

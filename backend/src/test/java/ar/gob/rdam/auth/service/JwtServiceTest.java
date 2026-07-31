@@ -47,7 +47,7 @@ class JwtServiceTest {
     @Test
     @DisplayName("generateCiudadanoToken: genera token válido")
     void generateCiudadanoToken_debeGenerarTokenValido() {
-        String token = jwtService.generateCiudadanoToken(ciudadano);
+        String token = jwtService.generateCiudadanoToken("maria@test.com");
 
         assertNotNull(token);
         assertTrue(jwtService.isTokenValid(token));
@@ -56,7 +56,7 @@ class JwtServiceTest {
     @Test
     @DisplayName("generateCiudadanoToken: claims contienen tipo CIUDADANO")
     void generateCiudadanoToken_debeContenerTipoCiudadano() {
-        String token = jwtService.generateCiudadanoToken(ciudadano);
+        String token = jwtService.generateCiudadanoToken("maria@test.com");
 
         assertEquals("maria@test.com", jwtService.extractUsername(token));
         assertEquals("CIUDADANO", jwtService.extractTipo(token));
@@ -90,7 +90,7 @@ class JwtServiceTest {
     void isTokenValid_tokenExpirado_debeDevolverFalse() {
         // Configurar expiración de 0 segundos → token nace expirado
         ReflectionTestUtils.setField(jwtService, "ciudadanoTokenExpiration", 0L);
-        String token = jwtService.generateCiudadanoToken(ciudadano);
+        String token = jwtService.generateCiudadanoToken("maria@test.com");
 
         assertFalse(jwtService.isTokenValid(token));
     }
@@ -98,7 +98,7 @@ class JwtServiceTest {
     @Test
     @DisplayName("isTokenValid: token manipulado devuelve false")
     void isTokenValid_tokenManipulado_debeDevolverFalse() {
-        String token = jwtService.generateCiudadanoToken(ciudadano);
+        String token = jwtService.generateCiudadanoToken("maria@test.com");
         // Alterar un carácter en la firma (última parte del JWT)
         char[] chars = token.toCharArray();
         int pos = chars.length - 5;

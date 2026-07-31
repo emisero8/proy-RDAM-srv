@@ -49,12 +49,12 @@ public class JwtService {
     /**
      * JWT simplificado para ciudadanos: solo email y tipo, con expiración de 24hs.
      */
-    public String generateCiudadanoToken(Usuario usuario) {
+    public String generateCiudadanoToken(String email) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("tipo", "CIUDADANO");
         claims.put("portal", "CIUDADANO");
         claims.put("rol", "CIUDADANO");
-        return buildToken(claims, usuario.getEmail(), ciudadanoTokenExpiration);
+        return buildToken(claims, email, ciudadanoTokenExpiration);
     }
 
     // ─── Builder interno ────────────────────────────────────────────────────────

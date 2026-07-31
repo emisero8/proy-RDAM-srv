@@ -1,6 +1,6 @@
 # RDAM — Paquete de Producción
 ## Gestión de Solicitudes y Certificados de Libre Deuda
-### i2T Software Factory | Campus de Verano 2026
+### i2T SA | Campus de Verano 2026
 **Alumno:** Serovich Emilio — DNI 43.770.166 — 3º T.S "A"
 
 ## Contenido

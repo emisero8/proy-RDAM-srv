@@ -12,4 +12,15 @@ public class CrearSolicitudRequest {
     private String urgencia = "NORMAL"; // NORMAL | URGENTE
 
     private String observaciones;
+
+    @NotBlank
+    private String nombre;
+
+    @NotBlank
+    private String apellido;
+
+    @NotBlank
+    private String dni;
+
+    private java.time.LocalDate fechaNacimiento;
 }

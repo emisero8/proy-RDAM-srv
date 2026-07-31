@@ -1,6 +1,7 @@
 package ar.gob.rdam.solicitudes.service;
 
 import ar.gob.rdam.common.exception.BusinessException;
+import ar.gob.rdam.common.service.EmailService;
 import ar.gob.rdam.domain.entity.HistorialEstado;
 import ar.gob.rdam.domain.entity.Solicitud;
 import ar.gob.rdam.domain.entity.Usuario;
@@ -23,7 +24,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +32,7 @@ public class SolicitudService {
 
     private final SolicitudRepository solicitudRepository;
     private final HistorialEstadoRepository historialRepository;
+    private final EmailService emailService;
 
     @Value("${rdam.arancel.libre-deuda}")
     private BigDecimal arancelLibreDeuda;
@@ -39,8 +40,6 @@ public class SolicitudService {
     @Value("${rdam.certificado.validez-dias}")
     private int validezDias;
 
-    // Counter simple para número de solicitud (en prod usar secuencia DB)
-    private final AtomicLong counter = new AtomicLong(1);
 
     // ─── Crear solicitud (ciudadano) ──────────────────────────────────────────
     //
@@ -49,13 +48,17 @@ public class SolicitudService {
     // No hay etapa de revisión ni aprobación.
 
     @Transactional
-    public SolicitudDTO crear(CrearSolicitudRequest request, Usuario ciudadano) {
-        String numero = "SOL-" + LocalDate.now().getYear() + "-"
-                + String.format("%03d", counter.getAndIncrement());
+    public SolicitudDTO crear(CrearSolicitudRequest request, String email) {
+        // Generamos un numero temporal para cumplir con la constraint de NOT NULL y UNIQUE
+        String tempNumero = java.util.UUID.randomUUID().toString().substring(0, 20);
 
         Solicitud s = Solicitud.builder()
-                .numero(numero)
-                .ciudadano(ciudadano)
+                .numero(tempNumero)
+                .email(email)
+                .nombre(request.getNombre())
+                .apellido(request.getApellido())
+                .dni(request.getDni())
+                .fechaNacimiento(request.getFechaNacimiento())
                 .tipoCert(request.getTipoCert())
                 .urgencia(request.getUrgencia())
                 .observaciones(request.getObservaciones())
@@ -64,7 +67,12 @@ public class SolicitudService {
                 .build();
 
         s = solicitudRepository.save(s);
-        registrarHistorial(s, null, EstadoSolicitud.PENDIENTE_PAGO, ciudadano, "Solicitud creada — pago requerido");
+        
+        // Actualizamos con el numero final usando el ID autogenerado
+        s.setNumero("SOL-" + LocalDate.now().getYear() + "-" + String.format("%03d", s.getId()));
+        s = solicitudRepository.save(s);
+
+        registrarHistorial(s, null, EstadoSolicitud.PENDIENTE_PAGO, null, "Solicitud creada — pago requerido");
         return toDTO(s);
     }
 
@@ -104,10 +112,10 @@ public class SolicitudService {
         String s = search != null ? search.toLowerCase() : "";
 
         if (estado == null) {
-            return solicitudRepository.buscarSolicitudesGestorSinEstado(gestorId, tc, urg, fd, fh, s, pageable)
+            return solicitudRepository.buscarSolicitudesGestorSinEstado(tc, urg, fd, fh, s, pageable)
                     .map(this::toDTO);
         } else {
-            return solicitudRepository.buscarSolicitudesGestorConEstado(gestorId, estado, tc, urg, fd, fh, s, pageable)
+            return solicitudRepository.buscarSolicitudesGestorConEstado(estado, tc, urg, fd, fh, s, pageable)
                     .map(this::toDTO);
         }
     }
@@ -115,22 +123,24 @@ public class SolicitudService {
     // ─── Listar mis solicitudes (ciudadano) ───────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<SolicitudDTO> listarMias(Usuario ciudadano, int page, int limit) {
-        return solicitudRepository.findAllByCiudadanoId(ciudadano.getId(), PageRequest.of(page, limit))
+    public List<SolicitudDTO> listarMias(String email, int page, int limit) {
+        return solicitudRepository.findAllByEmail(email, PageRequest.of(page, limit))
                 .stream().map(this::toDTO).toList();
     }
 
     // ─── Ver detalle ──────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public SolicitudDTO getById(Long id, Usuario solicitante) {
+    public SolicitudDTO getById(Long id, Object solicitante) {
         Solicitud s = findOrThrow(id);
-        // Ciudadano solo puede ver sus propias solicitudes
-        if ("ROLE_CIUDADANO".equals(solicitante.getAuthorities().iterator().next().getAuthority())) {
-            if (!s.getCiudadano().getId().equals(solicitante.getId())) {
+        
+        if (solicitante instanceof String email) {
+            // Es un ciudadano
+            if (!email.equals(s.getEmail())) {
                 throw new BusinessException("FORBIDDEN", "No tiene permisos para ver esta solicitud.");
             }
         }
+        
         return toDTO(s);
     }
 
@@ -138,13 +148,13 @@ public class SolicitudService {
     // Solo se puede cancelar cuando está PENDIENTE_PAGO (antes de pagar).
 
     @Transactional
-    public SolicitudDTO cancelar(Long id, Usuario ciudadano) {
+    public SolicitudDTO cancelar(Long id, String email) {
         Solicitud s = findOrThrow(id);
-        if (!s.getCiudadano().getId().equals(ciudadano.getId())) {
+        if (!email.equals(s.getEmail())) {
             throw new BusinessException("FORBIDDEN", "Solo el ciudadano dueño puede cancelar la solicitud.");
         }
         validarTransicion(s.getEstado(), EstadoSolicitud.CANCELADA);
-        cambiarEstado(s, EstadoSolicitud.CANCELADA, ciudadano, "Cancelada por el ciudadano");
+        cambiarEstado(s, EstadoSolicitud.CANCELADA, null, "Cancelada por el ciudadano: " + email);
         return toDTO(solicitudRepository.save(s));
     }
 
@@ -156,10 +166,19 @@ public class SolicitudService {
         solicitudRepository.save(solicitud);
     }
 
+    // ─── Marcar como RECHAZADA (llamado desde PagoService/webhook) ───────────
+
+    @Transactional
+    public void marcarComoRechazada(Solicitud solicitud) {
+        cambiarEstado(solicitud, EstadoSolicitud.RECHAZADA, null, "Pago rechazado por la pasarela");
+        solicitudRepository.save(solicitud);
+    }
+
     // ─── Marcar como EMITIDA (llamado desde CertificadoService) ──────────────
 
     @Transactional
     public void marcarComoEmitida(Solicitud solicitud, Usuario emisor) {
+        solicitud.setRevisor(emisor);
         cambiarEstado(solicitud, EstadoSolicitud.EMITIDA, emisor, "Certificado emitido");
         solicitudRepository.save(solicitud);
     }
@@ -207,6 +226,20 @@ public class SolicitudService {
         EstadoSolicitud anterior = s.getEstado();
         s.setEstado(nuevo);
         registrarHistorial(s, anterior, nuevo, actor, comentario);
+
+        // Notificar al ciudadano por email del cambio de estado
+        try {
+            emailService.enviarCambioEstado(
+                    s.getEmail(),
+                    s.getNombre() + " " + s.getApellido(),
+                    s.getNumero(),
+                    anterior,
+                    nuevo,
+                    comentario
+            );
+        } catch (Exception e) {
+            log.error("Error al enviar notificación de cambio de estado: {}", e.getMessage());
+        }
     }
 
     private void registrarHistorial(Solicitud s, EstadoSolicitud ant,
@@ -231,7 +264,7 @@ public class SolicitudService {
             return;
         }
         boolean valida = switch (actual) {
-            case PENDIENTE_PAGO -> destino == EstadoSolicitud.PAGADA;
+            case PENDIENTE_PAGO -> destino == EstadoSolicitud.PAGADA || destino == EstadoSolicitud.RECHAZADA;
             case PAGADA         -> destino == EstadoSolicitud.EMITIDA;
             case EMITIDA        -> destino == EstadoSolicitud.EXPIRADA;
             default             -> false;
@@ -246,9 +279,10 @@ public class SolicitudService {
         return SolicitudDTO.builder()
                 .id(s.getId())
                 .numero(s.getNumero())
-                .ciudadanoId(s.getCiudadano().getId())
-                .ciudadanoNombre(s.getCiudadano().getNombre() + " " + s.getCiudadano().getApellido())
-                .ciudadanoEmail(s.getCiudadano().getEmail())
+                .ciudadanoNombre(s.getNombre() + " " + s.getApellido())
+                .ciudadanoEmail(s.getEmail())
+                .ciudadanoDni(s.getDni())
+                .ciudadanoFechaNacimiento(s.getFechaNacimiento())
                 .tipoCert(s.getTipoCert())
                 .urgencia(s.getUrgencia())
                 .estado(s.getEstado())

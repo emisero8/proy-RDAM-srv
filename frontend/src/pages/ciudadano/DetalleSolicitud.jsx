@@ -172,7 +172,7 @@ export default function DetalleSolicitud() {
                 </div>
             )}
 
-            {/* === Detail Card === */}
+            {/* === Detail Card — Datos de la Solicitud === */}
             <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
                 <div className="detail-grid">
                     <div className="detail-field">
@@ -191,27 +191,47 @@ export default function DetalleSolicitud() {
                         <span className="detail-label">Fecha Creación</span>
                         <span className="detail-value">{formatDate(solicitud.createdAt)}</span>
                     </div>
+                    {isGestor && (
+                        <div className="detail-field">
+                            <span className="detail-label">Gestor Asignado</span>
+                            <span className="detail-value">
+                                {solicitud.revisorNombre ? `👤 ${solicitud.revisorNombre}` : 'Sin Asignar'}
+                            </span>
+                        </div>
+                    )}
                     {solicitud.observaciones && (
                         <div className="detail-field" style={{ gridColumn: '1 / -1' }}>
                             <span className="detail-label">Observaciones</span>
                             <span className="detail-value">{solicitud.observaciones}</span>
                         </div>
                     )}
-                    {/* Datos del ciudadano — solo visible para gestores/admins */}
-                    {isGestor && (
-                        <>
-                            <div className="detail-field">
-                                <span className="detail-label">Ciudadano</span>
-                                <span className="detail-value">👤 {solicitud.ciudadanoNombre}</span>
-                            </div>
-                            <div className="detail-field">
-                                <span className="detail-label">Email</span>
-                                <span className="detail-value">{solicitud.ciudadanoEmail}</span>
-                            </div>
-                        </>
-                    )}
                 </div>
             </div>
+
+            {/* === Datos del Ciudadano — solo visible para gestores/admins === */}
+            {isGestor && (
+                <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
+                    <h3 className="card-title" style={{ marginBottom: 'var(--space-lg)' }}>Datos del Ciudadano</h3>
+                    <div className="detail-grid">
+                        <div className="detail-field">
+                            <span className="detail-label">Ciudadano</span>
+                            <span className="detail-value">👤 {solicitud.ciudadanoNombre}</span>
+                        </div>
+                        <div className="detail-field">
+                            <span className="detail-label">Email</span>
+                            <span className="detail-value">{solicitud.ciudadanoEmail}</span>
+                        </div>
+                        <div className="detail-field">
+                            <span className="detail-label">DNI</span>
+                            <span className="detail-value">{solicitud.ciudadanoDni || '—'}</span>
+                        </div>
+                        <div className="detail-field">
+                            <span className="detail-label">Fecha de Nacimiento</span>
+                            <span className="detail-value">{solicitud.ciudadanoFechaNacimiento || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* === Actions === */}
             <div className="actions-bar" style={{ marginBottom: 'var(--space-lg)' }}>

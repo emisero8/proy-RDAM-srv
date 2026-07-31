@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,6 +17,8 @@ public class SolicitudDTO {
     private Long ciudadanoId;
     private String ciudadanoNombre;
     private String ciudadanoEmail;
+    private String ciudadanoDni;
+    private LocalDate ciudadanoFechaNacimiento;
     private String tipoCert;
     private String urgencia;
     private EstadoSolicitud estado;

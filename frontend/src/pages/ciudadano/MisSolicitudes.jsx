@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 export default function MisSolicitudes() {
     const [solicitudes, setSolicitudes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = más nuevas, 'asc' = más antiguas
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -15,6 +16,13 @@ export default function MisSolicitudes() {
             .catch(console.error)
             .finally(() => setLoading(false));
     }, []);
+
+
+    const solicitudesOrdenadas = [...solicitudes].sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
 
     if (loading) return <LoadingSpinner />;
 
@@ -25,9 +33,26 @@ export default function MisSolicitudes() {
                     <h1 className="page-title">Mis Solicitudes</h1>
                     <p className="page-subtitle">Seguimiento de tus trámites de libre deuda</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => navigate('/solicitudes/nueva')} id="btn-nueva-solicitud">
-                    + Nueva Solicitud
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <select 
+                        className="btn" 
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value)}
+                        style={{
+                            backgroundColor: 'var(--color-bg-card)',
+                            border: '1px solid var(--color-primary-500)',
+                            color: 'white',
+                            width: '160px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="desc">Más nuevas</option>
+                        <option value="asc">Más antiguas</option>
+                    </select>
+                    <button className="btn btn-primary" onClick={() => navigate('/solicitudes/nueva')} id="btn-nueva-solicitud">
+                        + Nueva Solicitud
+                    </button>
+                </div>
             </div>
 
             {solicitudes.length === 0 ? (
@@ -39,8 +64,8 @@ export default function MisSolicitudes() {
                     </button>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gap: 'var(--space-lg)' }}>
-                    {solicitudes.map((sol) => (
+                <div style={{ display: 'grid', gap: 'var(--space-lg)', maxWidth: '90%', margin: '0 auto' }}>
+                    {solicitudesOrdenadas.map((sol) => (
                         <SolicitudCard
                             key={sol.id}
                             solicitud={sol}

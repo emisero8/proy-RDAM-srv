@@ -30,6 +30,10 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # ─── Jackson (serialización de fechas en zona ARG) ──────────────────────────
+  jackson:
+    time-zone: America/Argentina/Buenos_Aires
+
   # ─── Email ────────────────────────────────────────────────────────────────────
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
@@ -51,6 +55,8 @@ jwt:
 
 # ─── RDAM Negocio ──────────────────────────────────────────────────────────────
 rdam:
+  mail:
+    from: ${MAIL_FROM:noreply@rdam.gob.ar}
   auth:
     codigo-ttl-minutos: ${AUTH_CODIGO_TTL:15}
     codigo-max-intentos: ${AUTH_CODIGO_MAX_INTENTOS:5}

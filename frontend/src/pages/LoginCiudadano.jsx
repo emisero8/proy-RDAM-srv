@@ -22,11 +22,7 @@ export default function LoginCiudadano() {
     // Redirigir automáticamente si ya está autenticado
     useEffect(() => {
         if (isAuthenticated && user?.portal === 'CIUDADANO') {
-            if (user?.perfilCompleto === false) {
-                navigate('/completar-perfil', { replace: true });
-            } else {
-                navigate('/solicitudes/mis', { replace: true });
-            }
+            navigate('/solicitudes/mis', { replace: true });
         }
     }, [isAuthenticated, user, navigate]);
 
@@ -50,13 +46,8 @@ export default function LoginCiudadano() {
         e.preventDefault();
         setError('');
         try {
-            const userData = await validarCodigo(email, codigo);
-            // Redirigir según si el perfil ya fue completado
-            if (userData?.perfilCompleto === false) {
-                navigate('/completar-perfil', { replace: true });
-            } else {
-                navigate('/solicitudes/mis', { replace: true });
-            }
+            await validarCodigo(email, codigo);
+            navigate('/solicitudes/mis', { replace: true });
         } catch (err) {
             const msg = err.response?.data?.error?.message || 'Código inválido o expirado';
             setError(msg);
@@ -67,8 +58,8 @@ export default function LoginCiudadano() {
         <div className="auth-container">
             <div className="auth-card">
                 <div className="auth-logo">
-                    <h1>RDAM</h1>
-                    <p>ID Ciudadano — Portal de Servicios</p>
+                    <h1>Registro de Deudores Alimentarios Morosos</h1>
+                    <p>Solicitud Online</p>
                 </div>
 
                 {step === 1 ? (
@@ -90,8 +81,8 @@ export default function LoginCiudadano() {
                             />
                         </div>
 
-                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-dim)', marginBottom: '1rem' }}>
-                            Te enviaremos un código de 6 dígitos a tu email para verificar tu identidad. No necesitás contraseña.
+                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text)', marginBottom: '1rem' }}>
+                            Ingrese su email para cargar la solicitud. Te enviaremos un código de 6 dígitos para verificar tu identidad.
                         </p>
 
                         <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={loading} id="btn-solicitar-codigo">

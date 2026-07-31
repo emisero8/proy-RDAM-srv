@@ -167,6 +167,7 @@ public class PagoService {
         } else if ("RECHAZADA".equalsIgnoreCase(payload.getEstado())) {
             pago.setEstado(EstadoPago.RECHAZADO);
             pagoRepository.save(pago);
+            solicitudService.marcarComoRechazada(solicitud);
             log.warn("Pago RECHAZADO para solicitud {}", solicitud.getNumero());
         } else {
             log.warn("Estado de pago desconocido recibido: {}", payload.getEstado());

@@ -1,6 +1,7 @@
 package ar.gob.rdam.auth.service;
 
 import ar.gob.rdam.auth.dto.*;
+import ar.gob.rdam.common.service.EmailService;
 import ar.gob.rdam.auth.repository.RefreshTokenRepository;
 import ar.gob.rdam.common.exception.BusinessException;
 import ar.gob.rdam.domain.entity.RefreshToken;
@@ -33,6 +34,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailTokenService emailTokenService;
     private final RateLimiterService rateLimiterService;
+    private final EmailService emailService;
 
     @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpiration; // segundos
@@ -52,8 +54,10 @@ public class AuthService {
         rateLimiterService.verificarLimite(email);
         String codigo = emailTokenService.generarToken(email);
 
-        // TODO: En producción enviar por email real via JavaMailSender
-        // mailService.enviarCodigoVerificacion(email, codigo);
+        // Enviar email real con el código de verificación
+        emailService.enviarCodigoLogin(email, codigo);
+
+        // Mantener log en consola para practicidad en desarrollo
         log.info("📧 [DEV] Código de verificación para {}: {}", email, codigo);
 
         return Map.of("message", "Código enviado al email " + email + ". Válido por 15 minutos.");
@@ -67,32 +71,15 @@ public class AuthService {
     public AuthResponse validarCodigo(String email, String codigo) {
         emailTokenService.validarToken(email, codigo);
 
-        // Buscar ciudadano existente o crear uno nuevo (sin contraseña)
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    log.info("Creando usuario ciudadano automático para: {}", email);
-                    Usuario nuevo = Usuario.builder()
-                            .nombre("Ciudadano")
-                            .apellido("")
-                            .email(email)
-                            .password(null) // sin contraseña
-                            .tipo(TipoUsuario.CIUDADANO)
-                            .rol(RolUsuario.CIUDADANO)
-                            .activo(true)
-                            .perfilCompleto(false)
-                            .build();
-                    return usuarioRepository.save(nuevo);
-                });
+        // Validar que no sea un usuario interno intentando usar el portal ciudadano
+        usuarioRepository.findByEmail(email).ifPresent(usuario -> {
+            if (usuario.getTipo() != TipoUsuario.CIUDADANO) {
+                throw new BusinessException("FORBIDDEN",
+                        "Este email pertenece a un usuario interno. Usá el portal de administración.");
+            }
+        });
 
-        if (usuario.getTipo() != TipoUsuario.CIUDADANO) {
-            throw new BusinessException("FORBIDDEN",
-                    "Este email pertenece a un usuario interno. Usá el portal de administración.");
-        }
-        if (!usuario.getActivo()) {
-            throw new BusinessException("USER_INACTIVE", "El usuario está desactivado.");
-        }
-
-        return buildCiudadanoAuthResponse(usuario);
+        return buildCiudadanoAuthResponse(email);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -134,7 +121,7 @@ public class AuthService {
 
         String portal = rt.getLoginPortal();
         if ("CIUDADANO".equals(portal)) {
-            return buildCiudadanoAuthResponse(rt.getUsuario());
+            return buildCiudadanoAuthResponse(rt.getEmail());
         } else {
             return buildAdminAuthResponse(rt.getUsuario());
         }
@@ -153,42 +140,17 @@ public class AuthService {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // COMPLETAR PERFIL — Onboarding primer ingreso
+    // NO SE REQUIERE COMPLETAR PERFIL PARA CIUDADANOS (datos en Solicitud)
     // ═══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * El ciudadano completa sus datos básicos en el primer ingreso.
-     * Si es menor de 18 años, se elimina la cuenta y se lanza una excepción.
-     */
-    @Transactional
-    public AuthResponse completarPerfil(Usuario usuario, CompletarPerfilRequest request) {
-        // Validar mayoría de edad
-        int edad = Period.between(request.getFechaNacimiento(), LocalDate.now()).getYears();
-        if (edad < 18) {
-            log.warn("Intento de registro de menor de edad para: {}", usuario.getEmail());
-            // Revocar todos los tokens antes de borrar
-            refreshTokenRepository.revocarTodosByUsuario(usuario);
-            // Eliminar el usuario del sistema
-            usuarioRepository.deleteById(usuario.getId());
-            throw new BusinessException("MENOR_DE_EDAD",
-                    "Debés ser mayor de 18 años para utilizar este servicio. La cuenta ha sido eliminada.");
-        }
-
-        // Completar perfil del ciudadano
-        usuario.setNombre(request.getNombre().trim());
-        usuario.setApellido(request.getApellido().trim());
-        usuario.setDniCuil(request.getDniCuil().trim());
-        usuario.setFechaNacimiento(request.getFechaNacimiento());
-        usuario.setPerfilCompleto(true);
-        usuarioRepository.save(usuario);
-
-        log.info("Perfil completado para ciudadano: {}", usuario.getEmail());
-        return buildCiudadanoAuthResponse(usuario);
-    }
 
     @Transactional
     public void logoutAll(Usuario usuario) {
         refreshTokenRepository.revocarTodosByUsuario(usuario);
+    }
+
+    @Transactional
+    public void logoutAllByEmail(String email) {
+        refreshTokenRepository.revocarTodosByEmail(email);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -212,13 +174,13 @@ public class AuthService {
      * Construye respuesta para ciudadano: JWT de 24hs sin info de roles/permisos
      * avanzados.
      */
-    private AuthResponse buildCiudadanoAuthResponse(Usuario usuario) {
-        String accessToken = jwtService.generateCiudadanoToken(usuario);
+    private AuthResponse buildCiudadanoAuthResponse(String email) {
+        String accessToken = jwtService.generateCiudadanoToken(email);
         String refreshTokenValue = UUID.randomUUID().toString();
 
         RefreshToken rt = RefreshToken.builder()
                 .token(refreshTokenValue)
-                .usuario(usuario)
+                .email(email)
                 .loginPortal("CIUDADANO")
                 .expiresAt(LocalDateTime.now().plusSeconds(refreshTokenExpiration))
                 .build();
@@ -230,12 +192,9 @@ public class AuthService {
                 .expiresIn(jwtService.getCiudadanoTokenExpiration())
                 .portal("CIUDADANO")
                 .usuario(AuthResponse.UsuarioInfo.builder()
-                        .id(usuario.getId())
-                        .nombre(usuario.getNombre())
-                        .apellido(usuario.getApellido())
-                        .email(usuario.getEmail())
-                        .rol(usuario.getRol().name())
-                        .perfilCompleto(Boolean.TRUE.equals(usuario.getPerfilCompleto()))
+                        .email(email)
+                        .rol("CIUDADANO")
+                        .perfilCompleto(true)
                         .build())
                 .build();
     }

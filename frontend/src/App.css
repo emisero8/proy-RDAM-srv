@@ -3,9 +3,9 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .navbar {
-  background: rgba(15, 23, 42, .85);
+  background: rgba(42, 37, 32, .92);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(201, 162, 86, .25);
   position: sticky;
   top: 0;
   z-index: 100;

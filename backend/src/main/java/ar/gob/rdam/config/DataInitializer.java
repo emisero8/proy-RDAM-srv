@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 /**
  * Crea datos de prueba al arrancar en perfil 'dev' o 'test'.
  * En producción NO se ejecuta.
+ *
+ * NOTA: Los ciudadanos ya NO se almacenan en la base de datos.
+ * Solo se persisten usuarios INTERNOS (gestores, admin).
  */
 @Component
 @Profile({ "dev", "test" })
@@ -24,28 +27,13 @@ public class DataInitializer implements ApplicationRunner {
 
         private final UsuarioRepository usuarioRepository;
         private final PasswordEncoder passwordEncoder;
-        private final ar.gob.rdam.auth.repository.RefreshTokenRepository refreshTokenRepository;
 
         @Override
         public void run(ApplicationArguments args) {
-                // Borrar sesiones activas al reiniciar (pedido por seguridad)
-                refreshTokenRepository.deleteAll();
-                log.info(" Sesiones (Refresh Tokens) eliminadas para forzar re-login.");
-
-                if (usuarioRepository.count() > 0)
+                if (usuarioRepository.count() > 0) {
+                        log.info("ℹ️  DataInitializer: ya existen usuarios, se omite la carga inicial.");
                         return;
-
-                // Ciudadano (sin contraseña — usa token por email)
-                usuarioRepository.save(Usuario.builder()
-                                .nombre("María")
-                                .apellido("García")
-                                .email("mgarcia@email.com")
-                                .password(null)
-                                .dniCuil("27-34567890-1")
-                                .tipo(TipoUsuario.CIUDADANO)
-                                .rol(RolUsuario.CIUDADANO)
-                                .activo(true)
-                                .build());
+                }
 
                 // Gestor 1 — Circunscripción I
                 usuarioRepository.save(Usuario.builder()
@@ -86,6 +74,7 @@ public class DataInitializer implements ApplicationRunner {
                                 .activo(true)
                                 .build());
 
-                log.info("✅ DataInitializer: usuarios de prueba creados");
+                log.info("✅ DataInitializer: usuarios internos de prueba creados (gestores + admin).");
         }
 }
+

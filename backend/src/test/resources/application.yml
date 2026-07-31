@@ -34,6 +34,8 @@ jwt:
   refresh-token-expiration: 604800
 
 rdam:
+  mail:
+    from: test@rdam.local
   certificado:
     validez-dias: 90
     storage-path: ./test-certs

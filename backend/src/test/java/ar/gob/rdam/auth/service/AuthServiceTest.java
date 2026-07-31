@@ -3,6 +3,7 @@ package ar.gob.rdam.auth.service;
 import ar.gob.rdam.auth.dto.LoginRequest;
 import ar.gob.rdam.auth.repository.RefreshTokenRepository;
 import ar.gob.rdam.common.exception.BusinessException;
+import ar.gob.rdam.common.service.EmailService;
 import ar.gob.rdam.domain.entity.Usuario;
 import ar.gob.rdam.domain.enums.RolUsuario;
 import ar.gob.rdam.domain.enums.TipoUsuario;
@@ -41,6 +42,8 @@ class AuthServiceTest {
     private EmailTokenService emailTokenService;
     @Mock
     private RateLimiterService rateLimiterService;
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private AuthService authService;
@@ -81,6 +84,7 @@ class AuthServiceTest {
         assertTrue(result.get("message").contains("maria@test.com"));
         verify(rateLimiterService).verificarLimite("maria@test.com");
         verify(emailTokenService).generarToken("maria@test.com");
+        verify(emailService).enviarCodigoLogin("maria@test.com", "123456");
     }
 
     @Test
@@ -95,11 +99,10 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("validarCodigo: código válido con usuario existente devuelve token")
-    void validarCodigo_codigoValidoUsuarioExistente_debeRetornarToken() {
+    @DisplayName("validarCodigo: código válido devuelve token")
+    void validarCodigo_codigoValido_debeRetornarToken() {
         doNothing().when(emailTokenService).validarToken("maria@test.com", "123456");
-        when(usuarioRepository.findByEmail("maria@test.com")).thenReturn(Optional.of(ciudadano));
-        when(jwtService.generateCiudadanoToken(any())).thenReturn("jwt-token");
+        when(jwtService.generateCiudadanoToken(anyString())).thenReturn("jwt-token");
         when(jwtService.getCiudadanoTokenExpiration()).thenReturn(86400L);
         when(refreshTokenRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -110,26 +113,7 @@ class AuthServiceTest {
         assertEquals("CIUDADANO", response.getPortal());
     }
 
-    @Test
-    @DisplayName("validarCodigo: código válido sin usuario crea ciudadano automático")
-    void validarCodigo_codigoValidoSinUsuario_debeCrearUsuario() {
-        doNothing().when(emailTokenService).validarToken("nuevo@test.com", "654321");
-        when(usuarioRepository.findByEmail("nuevo@test.com")).thenReturn(Optional.empty());
-        when(usuarioRepository.save(any())).thenAnswer(i -> {
-            Usuario u = i.getArgument(0);
-            u.setId(99L);
-            return u;
-        });
-        when(jwtService.generateCiudadanoToken(any())).thenReturn("jwt-nuevo");
-        when(jwtService.getCiudadanoTokenExpiration()).thenReturn(86400L);
-        when(refreshTokenRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        var response = authService.validarCodigo("nuevo@test.com", "654321");
-
-        assertNotNull(response);
-        assertEquals("jwt-nuevo", response.getAccessToken());
-        verify(usuarioRepository).save(any());
-    }
 
     @Test
     @DisplayName("validarCodigo: código inválido lanza excepción")

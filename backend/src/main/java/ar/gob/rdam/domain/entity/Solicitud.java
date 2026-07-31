@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +26,20 @@ public class Solicitud {
     @Column(nullable = false, unique = true, length = 20)
     private String numero;  // SOL-YYYY-NNN
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ciudadano_id", nullable = false)
-    private Usuario ciudadano;
+    @Column(nullable = false, length = 150)
+    private String email;
+
+    @Column(nullable = false, length = 100)
+    private String nombre;
+
+    @Column(nullable = false, length = 100)
+    private String apellido;
+
+    @Column(nullable = false, length = 20)
+    private String dni;
+
+    @Column(name = "fecha_nacimiento", nullable = false)
+    private LocalDate fechaNacimiento;
 
     @Column(name = "tipo_cert", length = 50)
     @Builder.Default

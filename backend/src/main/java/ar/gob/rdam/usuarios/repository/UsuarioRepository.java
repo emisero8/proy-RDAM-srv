@@ -24,7 +24,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
         @Query("""
                         SELECT u FROM Usuario u
-                        WHERE (:activo = -1 OR (CASE WHEN u.activo = true THEN 1 ELSE 0 END) = :activo)
+                        WHERE u.tipo = ar.gob.rdam.domain.enums.TipoUsuario.INTERNO
+                          AND (:activo = -1 OR (CASE WHEN u.activo = true THEN 1 ELSE 0 END) = :activo)
                           AND (:search = '' OR LOWER(u.nombre) LIKE CONCAT('%',:search,'%')
                                OR LOWER(u.apellido) LIKE CONCAT('%',:search,'%')
                                OR LOWER(u.email) LIKE CONCAT('%',:search,'%'))
@@ -36,7 +37,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
         @Query("""
                         SELECT u FROM Usuario u
-                        WHERE u.rol = :rol
+                        WHERE u.tipo = ar.gob.rdam.domain.enums.TipoUsuario.INTERNO
+                          AND u.rol = :rol
                           AND (:activo = -1 OR (CASE WHEN u.activo = true THEN 1 ELSE 0 END) = :activo)
                           AND (:search = '' OR LOWER(u.nombre) LIKE CONCAT('%',:search,'%')
                                OR LOWER(u.apellido) LIKE CONCAT('%',:search,'%')

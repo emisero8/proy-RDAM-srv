@@ -1,6 +1,7 @@
 package ar.gob.rdam.solicitudes.service;
 
 import ar.gob.rdam.common.exception.BusinessException;
+import ar.gob.rdam.common.service.EmailService;
 import ar.gob.rdam.domain.entity.Solicitud;
 import ar.gob.rdam.domain.entity.Usuario;
 import ar.gob.rdam.domain.enums.EstadoSolicitud;
@@ -33,6 +34,8 @@ class SolicitudServiceTest {
     private SolicitudRepository solicitudRepository;
     @Mock
     private HistorialEstadoRepository historialRepository;
+    @Mock
+    private EmailService emailService;
 
     @InjectMocks
     private SolicitudService solicitudService;
@@ -57,7 +60,7 @@ class SolicitudServiceTest {
         // En el nuevo flujo, las solicitudes nacen en PENDIENTE_PAGO
         solicitudPendientePago = Solicitud.builder()
                 .id(1L).numero("SOL-2026-001")
-                .ciudadano(ciudadano)
+                .email("maria@test.com").nombre("María").apellido("García").dni("12345678")
                 .tipoCert("LIBRE_DEUDA")
                 .urgencia("NORMAL")
                 .estado(EstadoSolicitud.PENDIENTE_PAGO)
@@ -74,7 +77,7 @@ class SolicitudServiceTest {
         req.setTipoCert("LIBRE_DEUDA");
         req.setUrgencia("NORMAL");
 
-        var dto = solicitudService.crear(req, ciudadano);
+        var dto = solicitudService.crear(req, "maria@test.com");
 
         assertNotNull(dto);
         assertEquals(EstadoSolicitud.PENDIENTE_PAGO, dto.getEstado());
@@ -88,7 +91,7 @@ class SolicitudServiceTest {
         when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendientePago));
         when(solicitudRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        var dto = solicitudService.cancelar(1L, ciudadano);
+        var dto = solicitudService.cancelar(1L, "maria@test.com");
 
         assertEquals(EstadoSolicitud.CANCELADA, dto.getEstado());
     }
@@ -100,7 +103,7 @@ class SolicitudServiceTest {
         when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendientePago));
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> solicitudService.cancelar(1L, ciudadano));
+                () -> solicitudService.cancelar(1L, "maria@test.com"));
         assertEquals("INVALID_TRANSITION", ex.getCode());
     }
 
@@ -114,7 +117,7 @@ class SolicitudServiceTest {
         when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendientePago));
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> solicitudService.cancelar(1L, otroCiudadano));
+                () -> solicitudService.cancelar(1L, "otro@test.com"));
         assertEquals("FORBIDDEN", ex.getCode());
     }
 
@@ -139,7 +142,7 @@ class SolicitudServiceTest {
         when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitudPendientePago));
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> solicitudService.getById(1L, otroCiudadano));
+                () -> solicitudService.getById(1L, "otro@test.com"));
         assertEquals("FORBIDDEN", ex.getCode());
     }
 }

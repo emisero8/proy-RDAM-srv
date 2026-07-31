@@ -57,18 +57,19 @@ public class SolicitudController {
     /** GET /solicitudes/mis — Solicitudes del ciudadano autenticado */
     @GetMapping("/mis")
     public ResponseEntity<List<SolicitudDTO>> listarMias(
-            @AuthenticationPrincipal Usuario usuario,
+            @AuthenticationPrincipal Object principal,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int limit) {
-        return ResponseEntity.ok(solicitudService.listarMias(usuario, page - 1, limit));
+        String email = (String) principal;
+        return ResponseEntity.ok(solicitudService.listarMias(email, page - 1, limit));
     }
 
     /** GET /solicitudes/:id — Detalle */
     @GetMapping("/{id}")
     public ResponseEntity<SolicitudDTO> getById(
             @PathVariable Long id,
-            @AuthenticationPrincipal Usuario usuario) {
-        return ResponseEntity.ok(solicitudService.getById(id, usuario));
+            @AuthenticationPrincipal Object principal) {
+        return ResponseEntity.ok(solicitudService.getById(id, principal));
     }
 
     /**
@@ -78,8 +79,9 @@ public class SolicitudController {
     @PostMapping
     public ResponseEntity<SolicitudDTO> crear(
             @Valid @RequestBody CrearSolicitudRequest request,
-            @AuthenticationPrincipal Usuario ciudadano) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(solicitudService.crear(request, ciudadano));
+            @AuthenticationPrincipal Object principal) {
+        String email = (String) principal;
+        return ResponseEntity.status(HttpStatus.CREATED).body(solicitudService.crear(request, email));
     }
 
     /**
@@ -89,8 +91,9 @@ public class SolicitudController {
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<SolicitudDTO> cancelar(
             @PathVariable Long id,
-            @AuthenticationPrincipal Usuario ciudadano) {
-        return ResponseEntity.ok(solicitudService.cancelar(id, ciudadano));
+            @AuthenticationPrincipal Object principal) {
+        String email = (String) principal;
+        return ResponseEntity.ok(solicitudService.cancelar(id, email));
     }
 
     /**
@@ -100,7 +103,7 @@ public class SolicitudController {
     @PatchMapping("/{id}/pagar")
     public ResponseEntity<SolicitudDTO> pagar(
             @PathVariable Long id,
-            @AuthenticationPrincipal Usuario ciudadano) {
+            @AuthenticationPrincipal Object principal) {
         Solicitud s = solicitudService.findOrThrow(id);
         if (s.getEstado() != EstadoSolicitud.PENDIENTE_PAGO) {
             throw new ar.gob.rdam.common.exception.BusinessException("BUSINESS_RULE",

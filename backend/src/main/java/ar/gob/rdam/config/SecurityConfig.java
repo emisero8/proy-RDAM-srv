@@ -69,6 +69,11 @@ public class SecurityConfig {
                         // ─── Solo ADMIN ──────────────────────────────────────
                         .requestMatchers("/usuarios", "/usuarios/**").hasAnyRole("ADMIN")
                         .requestMatchers("/reportes/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/help-tickets").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/help-tickets/**").hasRole("ADMIN")
+
+                        // ─── Cualquier usuario autenticado ─────────────────
+                        .requestMatchers(HttpMethod.POST, "/help-tickets").authenticated()
 
                         // ─── GESTOR o ADMIN ──────────────────────────────────
                         .requestMatchers(HttpMethod.GET, "/solicitudes").hasAnyRole("GESTOR", "ADMIN")

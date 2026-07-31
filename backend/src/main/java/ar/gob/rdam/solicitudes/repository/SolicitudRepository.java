@@ -17,15 +17,17 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
 
      @Query("""
                SELECT s FROM Solicitud s
-               LEFT JOIN FETCH s.ciudadano c
                LEFT JOIN FETCH s.revisor r
                WHERE s.createdAt >= :fechaDesde
                  AND s.createdAt <= :fechaHasta
                  AND (:tipoCert = '' OR s.tipoCert = :tipoCert)
                  AND (:urgencia = '' OR s.urgencia = :urgencia)
                  AND (:search = ''
-                      OR lower(c.nombre) LIKE concat('%', :search, '%')
-                      OR lower(c.apellido) LIKE concat('%', :search, '%'))
+                      OR lower(s.numero) LIKE concat('%', :search, '%')
+                      OR lower(s.nombre) LIKE concat('%', :search, '%')
+                      OR lower(s.apellido) LIKE concat('%', :search, '%')
+                      OR lower(s.dni) LIKE concat('%', :search, '%')
+                      OR lower(s.email) LIKE concat('%', :search, '%'))
                ORDER BY s.createdAt DESC
                """)
      Page<Solicitud> buscarSolicitudesSinEstado(
@@ -38,7 +40,6 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
 
      @Query("""
                SELECT s FROM Solicitud s
-               LEFT JOIN FETCH s.ciudadano c
                LEFT JOIN FETCH s.revisor r
                WHERE s.estado = :estado
                  AND s.createdAt >= :fechaDesde
@@ -46,8 +47,11 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
                  AND (:tipoCert = '' OR s.tipoCert = :tipoCert)
                  AND (:urgencia = '' OR s.urgencia = :urgencia)
                  AND (:search = ''
-                      OR lower(c.nombre) LIKE concat('%', :search, '%')
-                      OR lower(c.apellido) LIKE concat('%', :search, '%'))
+                      OR lower(s.numero) LIKE concat('%', :search, '%')
+                      OR lower(s.nombre) LIKE concat('%', :search, '%')
+                      OR lower(s.apellido) LIKE concat('%', :search, '%')
+                      OR lower(s.dni) LIKE concat('%', :search, '%')
+                      OR lower(s.email) LIKE concat('%', :search, '%'))
                ORDER BY s.createdAt DESC
                """)
      Page<Solicitud> buscarSolicitudesConEstado(
@@ -61,21 +65,20 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
 
      @Query("""
                SELECT s FROM Solicitud s
-               LEFT JOIN FETCH s.ciudadano c
                LEFT JOIN FETCH s.revisor r
                WHERE s.createdAt >= :fechaDesde
                  AND s.createdAt <= :fechaHasta
                  AND (:tipoCert = '' OR s.tipoCert = :tipoCert)
                  AND (:urgencia = '' OR s.urgencia = :urgencia)
                  AND (:search = ''
-                      OR lower(c.nombre) LIKE concat('%', :search, '%')
-                      OR lower(c.apellido) LIKE concat('%', :search, '%'))
-                 AND (s.estado = ar.gob.rdam.domain.enums.EstadoSolicitud.PENDIENTE_REVISION
-                      OR (s.revisor IS NOT NULL AND s.revisor.id = :gestorId))
+                      OR lower(s.numero) LIKE concat('%', :search, '%')
+                      OR lower(s.nombre) LIKE concat('%', :search, '%')
+                      OR lower(s.apellido) LIKE concat('%', :search, '%')
+                      OR lower(s.dni) LIKE concat('%', :search, '%')
+                      OR lower(s.email) LIKE concat('%', :search, '%'))
                ORDER BY s.createdAt DESC
                """)
      Page<Solicitud> buscarSolicitudesGestorSinEstado(
-               @Param("gestorId") Long gestorId,
                @Param("tipoCert") String tipoCert,
                @Param("urgencia") String urgencia,
                @Param("fechaDesde") LocalDateTime fechaDesde,
@@ -85,7 +88,6 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
 
      @Query("""
                SELECT s FROM Solicitud s
-               LEFT JOIN FETCH s.ciudadano c
                LEFT JOIN FETCH s.revisor r
                WHERE s.estado = :estado
                  AND s.createdAt >= :fechaDesde
@@ -93,14 +95,14 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
                  AND (:tipoCert = '' OR s.tipoCert = :tipoCert)
                  AND (:urgencia = '' OR s.urgencia = :urgencia)
                  AND (:search = ''
-                      OR lower(c.nombre) LIKE concat('%', :search, '%')
-                      OR lower(c.apellido) LIKE concat('%', :search, '%'))
-                 AND (s.estado = ar.gob.rdam.domain.enums.EstadoSolicitud.PENDIENTE_REVISION
-                      OR (s.revisor IS NOT NULL AND s.revisor.id = :gestorId))
+                      OR lower(s.numero) LIKE concat('%', :search, '%')
+                      OR lower(s.nombre) LIKE concat('%', :search, '%')
+                      OR lower(s.apellido) LIKE concat('%', :search, '%')
+                      OR lower(s.dni) LIKE concat('%', :search, '%')
+                      OR lower(s.email) LIKE concat('%', :search, '%'))
                ORDER BY s.createdAt DESC
                """)
      Page<Solicitud> buscarSolicitudesGestorConEstado(
-               @Param("gestorId") Long gestorId,
                @Param("estado") EstadoSolicitud estado,
                @Param("tipoCert") String tipoCert,
                @Param("urgencia") String urgencia,
@@ -109,7 +111,7 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
                @Param("search") String search,
                Pageable pageable);
 
-     List<Solicitud> findAllByCiudadanoId(Long ciudadanoId, Pageable pageable);
+     List<Solicitud> findAllByEmail(String email, Pageable pageable);
 
      long countByEstado(EstadoSolicitud estado);
 
