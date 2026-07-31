@@ -7,7 +7,6 @@
 
 | Archivo | Descripción |
 |---------|-------------|
-| `poc-rdam.html` | POC navegable de alta fidelidad — abrir directamente en el navegador |
 | `ALCANCE.pdf` | Documento de alcance del proyecto (módulos, historias, plan de entrega) |
 | `ARQUITECTURA.pdf` | Diagrama de arquitectura visual |
 | `SPEC.pdf` | Especificación funcional completa (roles, datos, estados, integraciones) |
